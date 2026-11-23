@@ -1,0 +1,17 @@
+{
+  "name": "HORINSA · Planta de hormigón en Lanzarote",
+  "short_name": "HORINSA",
+  "description": "Juego de gestión de una planta de hormigón y asfalto en Lanzarote.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0b3a57",
+  "theme_color": "#d2201f",
+  "icons": [
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

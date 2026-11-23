@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>HORINSA · Lanzarote</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#d2201f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HORINSA">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="favicon.png">
 <style>
 :root{--rojo:#d2201f;--panel:rgba(16,20,26,.88);--txt:#eef1f4;--sub:#9aa6b2;--borde:rgba(255,255,255,.1)}
 *{box-sizing:border-box}
@@ -930,5 +936,6 @@ cargarDEM().finally(()=>setTimeout(()=>{const t0=performance.now();TERRENO=gener
 <script type="module" src="minijuego.js"></script>
 <script type="module" src="pala.js"></script>
 <script type="module" src="canaleta.js"></script>
+<script>if ('serviceWorker' in navigator && isSecureContext && location.hostname !== 'localhost') addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));</script>
 </body>
 </html>
