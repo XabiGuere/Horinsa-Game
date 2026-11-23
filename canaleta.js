@@ -7,6 +7,8 @@
 //  window.abrirCanaleta({ dif, cliente, chofer, alTerminar }) → Promise
 // =====================================================================
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { hormigonera } from './camiones3d.js';
 
 const CSS = `
 #cnCapa{position:fixed;inset:0;z-index:200;background:#000;touch-action:none;user-select:none;-webkit-user-select:none;font-family:system-ui,sans-serif;color:#fff}
@@ -48,29 +50,7 @@ const std = (color, ex) => new THREE.MeshStandardMaterial({ color, roughness: .7
 function caja(par, w, h, d, m, x, y, z){ const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; par.add(o); return o; }
 function cil(par, r1, r2, h, m, x, y, z, seg = 14){ const o = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; par.add(o); return o; }
 
-// hormigonera de 3 ejes con cuba que gira y canaleta trasera orientable
-function hormigonera(par){
-  const g = new THREE.Group(); par.add(g);
-  const bl = std(0xf2f2f0, { roughness: .4 }), rj = std(0xd2201f, { roughness: .4 }), ng = std(0x1a1a1a, { roughness: .8 }), gr = std(0x8a9096, { metalness: .6, roughness: .4 });
-  caja(g, 8.4, .45, 1.1, ng, -.2, 1.0, 0);                                                         // chasis
-  caja(g, 2.2, 2.3, 2.5, bl, 3.0, 2.3, 0); caja(g, 2.22, .45, 2.52, rj, 3.0, 1.35, 0);              // cabina
-  caja(g, .1, 1.0, 2.2, std(0x223744, { roughness: .05, metalness: .9 }), 4.12, 2.7, 0);
-  for (const s of [-1, 1]) caja(g, .1, .35, .25, ng, 3.6, 2.8, s * 1.42);                          // retrovisores
-  const cuba = new THREE.Group(); cuba.position.set(-1.1, 2.75, 0); cuba.rotation.z = -.2; g.add(cuba);
-  const cubaGeo = new THREE.CylinderGeometry(.9, 1.25, 4.6, 20, 1); cubaGeo.rotateZ(Math.PI / 2);
-  const tc = lienzo(256, 64, (c, w, h) => { c.fillStyle = '#eceeef'; c.fillRect(0, 0, w, h); c.fillStyle = '#d2201f'; for (let i = 0; i < 4; i++){ c.save(); c.translate(i * 64, 0); c.beginPath(); c.moveTo(0, 0); c.lineTo(22, 0); c.lineTo(56, h); c.lineTo(34, h); c.fill(); c.restore(); } });
-  const cm = new THREE.Mesh(cubaGeo, new THREE.MeshStandardMaterial({ map: tc, roughness: .45, metalness: .2 })); cm.castShadow = true; cuba.add(cm);
-  cil(cuba, .55, .8, .6, bl, -2.55, 0, 0, 16).rotation.z = Math.PI / 2;                            // boca de carga/descarga
-  caja(g, .6, 1.4, 1.2, gr, -3.6, 2.1, 0);                                                         // tolva y soporte de canaleta
-  const piv = new THREE.Group(); piv.position.set(-3.95, 1.55, 0); g.add(piv);                     // la canaleta gira sobre este eje
-  const cmat = std(0xd2a20f, { metalness: .4, roughness: .45 });
-  const can = new THREE.Group(); can.rotation.z = -.32; piv.add(can);
-  caja(can, 2.8, .05, .5, cmat, -1.4, 0, 0); caja(can, 2.8, .25, .05, cmat, -1.4, .12, .25); caja(can, 2.8, .25, .05, cmat, -1.4, .12, -.25);
-  const ruedas = [];
-  for (const x of [-2.9, -1.6, 3.0]) for (const s of [-1, 1]){ const r = cil(g, .55, .55, .4, ng, x, .55, s * 1.15, 16); r.rotation.x = Math.PI / 2; ruedas.push(r); }
-  const luzAtras = new THREE.Mesh(new THREE.BoxGeometry(.06, .2, .5), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x000000 })); luzAtras.position.set(-4.3, 1.1, 0); g.add(luzAtras);
-  return { g, cuba: cm, piv, can, ruedas, luzAtras };
-}
+// la hormigonera detallada está en camiones3d.js (compartida con otros minijuegos)
 
 function iniciar(op, res){
   if (!document.getElementById('cnCss')){ const st = document.createElement('style'); st.id = 'cnCss'; st.textContent = CSS; document.head.appendChild(st); }
@@ -81,7 +61,9 @@ function iniciar(op, res){
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; renderer.outputColorSpace = THREE.SRGBColorSpace;
   capa.appendChild(renderer.domElement);
-  const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0xe9dcc6, 70, 380);
+  // reflejos de entorno (cristales, cromados y pintura del camión)
+  const pmrem = new THREE.PMREMGenerator(renderer), envTex = pmrem.fromScene(new RoomEnvironment(), .04).texture; pmrem.dispose();
+  const scene = new THREE.Scene(); scene.environment = envTex; scene.fog = new THREE.Fog(0xe9dcc6, 70, 380);
   const fovDe = a => a >= 1 ? 55 : Math.min(88, 55 * Math.pow(1 / a, .6));
   const camera = new THREE.PerspectiveCamera(fovDe(innerWidth / innerHeight), innerWidth / innerHeight, .1, 1200);
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(800, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false,
@@ -257,7 +239,7 @@ function iniciar(op, res){
   function dibujar(dt){
     const g = T.g; g.position.set(st.x, 0, st.z); g.rotation.y = -st.a;
     T.piv.rotation.y = -st.ang; T.cuba.rotation.x += dt * (st.desc ? -3 : .8);
-    for (const r of T.ruedas) r.rotation.y += st.v * dt / .55;
+    for (const r of T.ruedas) r.rotation.z -= st.v * dt / .55;
     T.luzAtras.material.emissive.set(st.v < -.1 ? 0xffffff : 0x000000);
     for (let i = 0; i < C.length; i++){ const h = st.lv[i], m = C[i].m; m.visible = h > .005; m.scale.y = Math.max(.001, h); m.position.y = -prof + h / 2; }
     for (let i = 0; i < NP; i++){ if (!gviva[i]) continue; o3.position.set(gp[i * 3], gp[i * 3 + 1], gp[i * 3 + 2]); o3.scale.setScalar(.09); o3.updateMatrix(); gotas.setMatrixAt(i, o3.matrix); }

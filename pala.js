@@ -24,9 +24,11 @@ const CSS = `
 #plJoy i{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#5b636b,#23272b);border:2px solid #111}
 #plJoy span{position:absolute;left:0;right:0;top:-22px;text-align:center;font-size:11px;font-weight:800;color:#f2b705;text-shadow:0 1px 2px #000}
 #plBots{position:absolute;right:16px;bottom:22px;display:grid;grid-template-columns:repeat(2,74px);gap:10px}
-#plBots button{height:64px;border-radius:14px;border:4px solid #f2b705;background:radial-gradient(circle at 45% 40%,#4b525a,#1f2327);color:#fff;font-weight:900;font-size:13px;touch-action:none;box-shadow:0 4px 12px #000a}
+#plBots button{line-height:1.15;height:64px;border-radius:14px;border:4px solid #f2b705;background:radial-gradient(circle at 45% 40%,#4b525a,#1f2327);color:#fff;font-weight:900;font-size:13px;touch-action:none;box-shadow:0 4px 12px #000a}
 #plBots button.on{background:radial-gradient(circle at 45% 40%,#7dff8a,#178a2c)}
 #plBots #plVolcar{grid-column:span 2;background:radial-gradient(circle at 45% 40%,#ff6b5a,#b3160f)}
+#plPaso{position:absolute;left:50%;transform:translateX(-50%);top:150px;background:#000c;border:2px solid #f2b705;border-radius:10px;padding:6px 12px;font-weight:800;font-size:14px;max-width:calc(100% - 32px);text-align:center;pointer-events:none}
+#plCam{position:absolute;right:12px;top:100px;display:flex;flex-direction:column;gap:6px}#plCam button{background:#000b;border:1px solid #fff4;color:#fff;border-radius:8px;padding:6px 10px;font-weight:700;font-size:14px;touch-action:none}
 #plFin{position:absolute;right:16px;top:64px;background:#000b;border:1px solid #fff4;color:#fff;border-radius:8px;padding:6px 10px;font-weight:700;font-size:12.5px}
 #plPanel{position:absolute;inset:0;display:grid;place-items:center;background:#0009}
 #plPanel .caja{width:min(440px,calc(100% - 32px));background:#151a21;border:1px solid #33404d;border-radius:14px;padding:18px;box-shadow:0 20px 50px #000c}
@@ -132,10 +134,10 @@ function iniciar(op, res){
 
   // acopios: tres boxes separados por muros, al oeste
   const mats = ['arena', 'gravilla', 'grava'], acopios = [];
-  mats.forEach((k, i) => { const z = -12 + i * 12, m = monton(scene, 6.2, 4.6, MAT[k].c, -21, z, i + 1); acopios.push({ k, x: -21, z, r: 6.2, m, t: 0 });
+  mats.forEach((k, i) => { const z = -12 + i * 12, m = monton(scene, 5.6, 4.4, MAT[k].c, -21, z, i + 1); acopios.push({ k, x: -21, z, r: 5.6, m, t: 0 });
     const et = new THREE.Mesh(new THREE.PlaneGeometry(4, 1), new THREE.MeshBasicMaterial({ map: lienzo(256, 64, (g, w, h) => { g.fillStyle = '#0e3a5c'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = '800 34px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(MAT[k].n.toUpperCase(), w / 2, h / 2 + 2); }) }));
     et.position.set(-27.4, 3.4, z); et.rotation.y = Math.PI / 2; scene.add(et); });
-  for (const z of [-18, -6, 6, 18]) caja(scene, 12, 3, .6, bloque, -22, 1.5, z);
+  for (const z of [-18, -6, 6, 18]) caja(scene, 5, 3, .6, bloque, -25.5, 1.5, z);              // muros cortos: solo separan el fondo de cada acopio
   caja(scene, .6, 3, 36, bloque, -28, 1.5, 0);
 
   // tolvas en el este: elevadas, se vuelca con el brazo arriba. Cada una con su material (cartel de color)
@@ -162,28 +164,29 @@ function iniciar(op, res){
   for (let i = 0; i < 8; i++){ const a = i / 8 * Math.PI * 2 + .3, r = 260 + Math.random() * 100, h = 25 + Math.random() * 30;
     const v = new THREE.Mesh(new THREE.ConeGeometry(h * 3.6, h, 16, 1, true), std(0x6b3d2b, { roughness: 1, flatShading: true })); v.position.set(Math.cos(a) * r, h / 2 - 2, Math.sin(a) * r); scene.add(v); }
   // obstáculos (rectángulos en planta) para chocar
-  const obst = [{ x: -28, z: 0, w: .6, d: 36 }, ...[-18, -6, 6, 18].map(z => ({ x: -22, z, w: 12, d: .6 })),
+  const obst = [{ x: -28, z: 0, w: .6, d: 36 }, ...[-18, -6, 6, 18].map(z => ({ x: -25.5, z, w: 5, d: .6 })),
     ...tolvas.map(t => ({ x: t.x, z: t.z, w: t.w, d: t.w })), ...tolvas.map(t => ({ x: t.x - t.w / 2 - .7, z: t.z, w: .8, d: t.w })), { x: 20, z: 0, w: 9, d: 9 }, { x: 20, z: -12, w: 6.4, d: 6.4 },
     { x: 0, z: -22.5, w: 56, d: 1 }, { x: 0, z: 22.5, w: 56, d: 1 }, { x: 28.5, z: 0, w: 1, d: 44 }];
   if (dif >= 2) for (const [x, z] of [[-3, -7], [-1, 9]]){ const c = new THREE.Mesh(new THREE.ConeGeometry(.3, .8, 12), std(0xff6a00)); c.position.set(x, .4, z); c.castShadow = true; scene.add(c); obst.push({ x, z, w: .6, d: .6, cono: c }); }
   if (dif === 3){ caja(scene, 5, 2.4, 2.4, std(0xececec), 0, 1.3, -17); obst.push({ x: 0, z: -17, w: 5, d: 2.4 }); }   // hormigonera aparcada
 
   const P = palaCargadora(scene);
-  const st = { x: -6, z: 0, a: Math.PI, v: 0, dir: 0, brazo: 0, cazo: 0, carga: 0, mat: null, t: 0, tiempo: 60, golpes: 0, mezclas: 0, derramado: 0, entregado: 0, vuelco: 0 };
+  const st = { x: -6, z: 0, a: Math.PI, v: 0, dir: 0, brazo: 0, cazo: 0, carga: 0, mat: null, t: 0, tiempo: [90, 80, 75][dif - 1], golpes: 0, mezclas: 0, derramado: 0, entregado: 0, vuelco: 0 };
   S = { capa, renderer, scene, camera, res, op, st, fin: false, empezado: false, joy: new THREE.Vector2(), teclas: new Set(), botones: { sub: false, baj: false, vol: false }, raf: 0, tolvas, acopios, obst, P, dif, pide };
   window.__plS = S;
 
   capa.insertAdjacentHTML('beforeend', `
     <div id="plHud"><div class="fila"><span class="tit">🚜 Pala cargadora · ${['fácil', 'normal', 'difícil'][dif - 1]}</span></div>
-      <div class="fila"><span class="chip" id="plT">⏱ 60 s</span><span class="chip" id="plCazo">🪣 Cazo vacío</span><span class="chip" id="plTot">📦 0 / ${pide} t</span><span class="chip" id="plBr">⬆ Brazo 0 %</span></div>
+      <div class="fila"><span class="chip" id="plT">⏱</span><span class="chip" id="plCazo">🪣 Cazo vacío</span><span class="chip" id="plTot">📦 0 / ${pide} t</span><span class="chip" id="plBr">⬆ Brazo 0 %</span></div>
       <div id="plTolvas">${tolvas.map((t, i) => `<div class="tv" data-i="${i}">${i + 1} · ${MAT[t.k].n}<div class="b"><i style="background:${MAT[t.k].css}"></i></div></div>`).join('')}</div></div>
     <div id="plAviso"></div><button id="plFin">Terminar</button>
     <div id="plJoy"><span>CONDUCIR</span><i></i></div>
-    <div id="plBots"><button id="plSub">⬆ BRAZO</button><button id="plBaj">⬇ BRAZO</button><button id="plVolcar">VOLCAR</button></div>
+    <div id="plBots"><button id="plSub">⬆ SUBIR<br>BRAZO</button><button id="plBaj">⬇ BAJAR<br>BRAZO</button><button id="plVolcar">🪣 VOLCAR PALA</button></div><div id="plPaso"></div>
+    <div id="plCam"><button data-cam="izq">⟲</button><button data-cam="der">⟳</button><button data-cam="alto">📷</button></div>
     <div id="plPanel"><div class="caja"><h3>🚜 ¡Coge la pala!</h3>
-      <p>${esc(op.palista || 'El palista')} tiene que salir y te deja la pala: hay que llenar las tolvas antes de que se quede sin áridos la planta. Tienes <b>1 minuto</b>.</p>
-      <p>🕹️ <b>Joystick</b> (o WASD): adelante, atrás y girar. Métete de frente en el acopio con el <b>brazo abajo</b> para llenar el cazo.</p>
-      <p>Acércate de frente a la tolva de <b>ese mismo material</b> (su borde se pone <b style="color:#5fe07a">verde</b>) y mantén <b>VOLCAR</b> (espacio): el brazo sube solo y vuelca.</p>
+      <p>${esc(op.palista || 'El palista')} tiene que salir y te deja la pala: hay que llenar las tolvas antes de que se quede sin áridos la planta. Tienes <b>${[90, 80, 75][dif - 1]} segundos</b>.</p>
+      <p>🕹️ <b>Joystick</b> (o WASD): adelante, atrás y girar. Métete de frente en el acopio con el <b>brazo abajo</b>: el cazo se llena al tocar el montón.</p>
+      <p>⬆ <b>SUBIR BRAZO</b> (R) hasta arriba, acércate de frente a la tolva de <b>ese mismo material</b> (su borde se pone <b style="color:#5fe07a">verde</b>) y pulsa <b>🪣 VOLCAR PALA</b> (espacio). ⬇ <b>BAJAR BRAZO</b> (F) para volver a cargar.</p>
       <p>⚠️ No mezcles materiales, no choques y no gires a toda velocidad con el brazo arriba.</p>
       <button id="plEmpezar">¡Arrancar!</button></div></div>`);
   const $ = id => capa.querySelector('#' + id);
@@ -198,6 +201,8 @@ function iniciar(op, res){
   S.rs = () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.fov = fovDe(camera.aspect); camera.updateProjectionMatrix(); }; addEventListener('resize', S.rs);
   $('plEmpezar').onclick = () => { $('plPanel').remove(); S.empezado = true; motor(); };
   $('plFin').onclick = () => terminar();
+  $('plCam').addEventListener('pointerdown', e => { const b = e.target.closest('[data-cam]'); if (!b) return; e.preventDefault(); const k = b.dataset.cam; if (k === 'izq') S.yaw = (S.yaw || 0) + .4; else if (k === 'der') S.yaw = (S.yaw || 0) - .4; else S.alto = !S.alto; });
+  { let arr = null; const cv = renderer.domElement; cv.addEventListener('pointerdown', e => { arr = { id: e.pointerId, x: e.clientX }; }); cv.addEventListener('pointermove', e => { if (arr && e.pointerId === arr.id){ S.yaw = (S.yaw || 0) - (e.clientX - arr.x) * .006; arr.x = e.clientX; } }); const fa = e => { if (arr && e.pointerId === arr.id) arr = null; }; cv.addEventListener('pointerup', fa); cv.addEventListener('pointercancel', fa); }
   const aviso = t => { const a = $('plAviso'); a.textContent = t; a.style.opacity = 1; clearTimeout(S.tav); S.tav = setTimeout(() => a.style.opacity = 0, 1100); };
   S.aviso = aviso;
 
@@ -211,7 +216,7 @@ function iniciar(op, res){
   // ---- física ----
   // caja de choque: la máquina (de −3,4 a +2,2 m) y, con el brazo abajo, también el cazo (hasta +5 m). Con el brazo arriba el cazo pasa por encima de los topes.
   const ancho = 2.6, batalla = 3.1;
-  const esquinas = (x, z, a) => { const fr = st.brazo < .6 ? 5.0 : 2.2, at = 3.4, hl = (fr + at) / 2, centro = (fr - at) / 2, c = Math.cos(a), s = Math.sin(a), hw = ancho / 2, cx = x + c * centro, cz = z + s * centro;
+  const esquinas = (x, z, a) => { const fr = st.brazo < .6 ? 4.4 : 2.2, at = 3.4, hl = (fr + at) / 2, centro = (fr - at) / 2, c = Math.cos(a), s = Math.sin(a), hw = ancho / 2, cx = x + c * centro, cz = z + s * centro;
     return [[hl, hw], [hl, -hw], [-hl, -hw], [-hl, hw]].map(([u, v]) => [cx + c * u - s * v, cz + s * u + c * v]); };
   const choca = (x, z, a) => { const E = esquinas(x, z, a);
     for (const o of obst){ const R = [[o.x - o.w / 2, o.z - o.d / 2], [o.x + o.w / 2, o.z - o.d / 2], [o.x + o.w / 2, o.z + o.d / 2], [o.x - o.w / 2, o.z + o.d / 2]];
@@ -230,38 +235,40 @@ function iniciar(op, res){
     if (T.has('a') || T.has('arrowleft')) jx = -1; if (T.has('d') || T.has('arrowright')) jx = 1; if (T.has('w') || T.has('arrowup')) jy = -1; if (T.has('s') || T.has('arrowdown')) jy = 1;
     const sube = B.sub || T.has('r'), baja = B.baj || T.has('f'), volcar = B.vol || T.has(' ');
     // motor y dirección articulada
-    const objetivo = -jy * (jy < 0 ? 7 : 4.5) * (1 - st.brazo * .25);
+    // con el brazo arriba y cargada va más despacio (así no vuelca nunca)
+    const objetivo = -jy * (jy < 0 ? 7 : 4.5) * (st.brazo > .5 && st.carga > 0 ? .55 : 1);
     st.v += Math.max(-6 * dt, Math.min(6 * dt, objetivo - st.v)); if (Math.abs(jy) < .05) st.v *= Math.max(0, 1 - dt * 3);
     st.dir += (jx * .6 - st.dir) * Math.min(1, dt * 4);
     const nx = st.x + Math.cos(st.a) * st.v * dt, nz = st.z + Math.sin(st.a) * st.v * dt, na = st.a + st.v / batalla * Math.tan(st.dir) * dt;
-    const o = choca(nx, nz, na);
-    if (o){ if (Math.abs(st.v) > 1.2 && st.t - (st.ultGolpe || -9) > .8){ st.golpes++; st.ultGolpe = st.t; aviso('¡Golpe!'); S.sacudida = .25; ton(70, .3); if (o.cono){ o.cono.rotation.z = 1.4; o.cono.position.y = .2; } } st.v *= -.25; }
+    // si ya está metida en algo (p. ej. al bajar el brazo pegada a la tolva) puede salir: solo bloquea lo que empeora
+    const ya = choca(st.x, st.z, st.a), o = ya ? null : choca(nx, nz, na);
+    if (o){ if (Math.abs(st.v) > 2.2 && st.t - (st.ultGolpe || -9) > .8){ st.golpes++; st.ultGolpe = st.t; aviso('¡Golpe!'); S.sacudida = .25; ton(70, .3); if (o.cono){ o.cono.rotation.z = 1.4; o.cono.position.y = .2; } } st.v *= -.1; }
     else { st.x = nx; st.z = nz; st.a = na; }
     // brazo y cazo
     // VOLCAR también sube el brazo solo: basta con acercarse a la tolva y pulsarlo
-    if (sube || (volcar && st.carga > 0)) st.brazo = Math.min(1, st.brazo + dt * (volcar ? 1.4 : .8)); if (baja) st.brazo = Math.max(0, st.brazo - dt * .9);
+    if (sube) st.brazo = Math.min(1, st.brazo + dt * .9); if (baja) st.brazo = Math.max(0, st.brazo - dt * 1.1);
     // al alejarse de las tolvas con el cazo vacío, el brazo baja solo
-    if (!sube && !volcar && st.carga <= 0 && st.brazo > 0 && st.x < tolvas[0].x - 8) st.brazo = Math.max(0, st.brazo - dt * .7);
-    st.cazo += ((volcar && st.brazo > .7 ? 1 : 0) - st.cazo) * Math.min(1, dt * 6);
+    st.cazo += ((volcar ? 1 : 0) - st.cazo) * Math.min(1, dt * 6);
     // vuelco: correr o girar fuerte con el cazo arriba y cargado
     const riesgo = st.brazo > .8 && st.carga > 0 && Math.abs(st.v) > 3.5 ? Math.abs(st.v) * Math.abs(st.dir) * 1.2 : 0;
     st.vuelco = Math.max(0, st.vuelco + (riesgo > .9 ? dt * (riesgo - .9) * 2 : -dt * .8));
-    if (st.vuelco > .5 && !st.avisoV){ st.avisoV = true; aviso('⚠️ ¡Que vuelcas! Baja el brazo o ve más despacio'); setTimeout(() => st.avisoV = false, 1500); }
-    if (st.vuelco > 2.2){ st.vuelco = 0; st.golpes += 2; st.derramado += st.carga; if (st.mat) soltar(st.x + Math.cos(st.a) * 4, 2, st.z + Math.sin(st.a) * 4, st.mat, 30); st.carga = 0; st.mat = null; st.v = 0; aviso('😱 ¡Casi vuelcas! Se te cae la carga'); S.sacudida = .5; ton(55, .5); }
+    if (false && st.vuelco > .5 && !st.avisoV){ st.avisoV = true; aviso('⚠️ ¡Que vuelcas! Baja el brazo o ve más despacio'); setTimeout(() => st.avisoV = false, 1500); }
+    if (false && st.vuelco > 2.2){ st.vuelco = 0; st.golpes += 2; st.derramado += st.carga; if (st.mat) soltar(st.x + Math.cos(st.a) * 4, 2, st.z + Math.sin(st.a) * 4, st.mat, 30); st.carga = 0; st.mat = null; st.v = 0; aviso('😱 ¡Casi vuelcas! Se te cae la carga'); S.sacudida = .5; ton(55, .5); }
     // cargar: brazo abajo, de frente contra el acopio
     const [px, pz] = puntaCazo();
-    if (st.brazo < .18 && st.cazo < .3 && st.carga < CAZO){
-      for (const a of acopios){ const d = Math.hypot(px - a.x, pz - a.z); if (d < a.r * .95 && st.v > .3 || (d < a.r * .8 && Math.abs(st.v) <= .3 && st.cargando)){
+    if (st.brazo < .3 && st.cazo < .3 && st.carga < CAZO){
+      const empuja = st.v > .05 || S.joy.y < -.2 || S.teclas.has('w') || S.teclas.has('arrowup');
+      for (const a of acopios){ const d = Math.hypot(px - a.x, pz - a.z); if (d < a.r * 1.05 && (empuja || st.cargando)){
         if (st.mat && st.mat !== a.k && st.carga > .2){ if (!st.avisoMez){ st.avisoMez = true; aviso('Ya llevas otro material en el cazo'); setTimeout(() => st.avisoMez = false, 1500); } break; }
         st.mat = a.k; st.carga = Math.min(CAZO, st.carga + dt * 3); st.cargando = true; a.t += dt * 3; if (Math.random() < .5) soltar(px, .3, pz, a.k, 1, 1); if (st.carga >= CAZO) ton(120, .12); break; } }
     } else st.cargando = false;
     // volcar
-    if (st.cazo > .6 && st.carga > 0){
+    if (st.cazo > .6 && st.carga > 0 && !(st.brazo < .3 && !tolvas.some(t => Math.abs(px - t.x) < t.w / 2 + 2.1 && Math.abs(pz - t.z) < t.w / 2 + .6))){
       const v = Math.min(st.carga, dt * 6); st.carga -= v;
       let tv = null; for (const t of tolvas) if (Math.abs(px - t.x) < t.w / 2 + 2.1 && Math.abs(pz - t.z) < t.w / 2 + .6) tv = t;
       if (tv && st.brazo > .75){ tv.t += v; if (tv.k !== st.mat){ tv.mal += v; st.mezclas += v; if (!st.avisoMal){ st.avisoMal = true; aviso(`❌ ¡${MAT[st.mat].n} en la tolva de ${MAT[tv.k].n}!`); setTimeout(() => st.avisoMal = false, 1600); } } else st.entregado += v;
         soltar(Math.max(px, tv.x - tv.w / 2 + .6), 4.2, tv.z + (pz - tv.z) * .5, st.mat, 2, -1); }
-      else { st.derramado += v; soltar(px, .9 + st.brazo * 3, pz, st.mat, 2, 0); if (!st.avisoDer){ st.avisoDer = true; aviso(tv ? 'Sube más el brazo para llegar a la tolva' : 'Lo estás tirando al suelo'); setTimeout(() => st.avisoDer = false, 1500); } }
+      else { st.derramado += v; soltar(px, .9 + st.brazo * 3, pz, st.mat, 2, 0); if (!st.avisoDer){ st.avisoDer = true; aviso(tv ? '⬆ Sube el brazo del todo antes de volcar en la tolva' : 'Lo estás tirando al suelo'); setTimeout(() => st.avisoDer = false, 1500); } }
       if (st.carga <= 0){ st.carga = 0; st.mat = null; }
     }
     // partículas
@@ -288,9 +295,11 @@ function iniciar(op, res){
     // cámara de persecución por detrás y por encima, con algo de inercia
     const c = Math.cos(st.a), s = Math.sin(st.a), tt = performance.now() / 1000;
     S.sacudida = Math.max(0, (S.sacudida || 0) - dt); const sk = S.sacudida * Math.sin(tt * 55) * .4;
-    const objetivo = new THREE.Vector3(st.x - c * 11, 7.5 + sk, st.z - s * 11);
+    // cámara alta y algo de lado para ver el brazo y el cazo; se gira con ⟲ ⟳ o arrastrando
+    const yaw = st.a + Math.PI + .55 + (S.yaw || 0), dist = S.alto ? 9 : 12.5, alto = S.alto ? 14 : 8.5;
+    const objetivo = new THREE.Vector3(st.x + Math.cos(yaw) * dist, alto + sk, st.z + Math.sin(yaw) * dist);
     S.camP = S.camP ? S.camP.lerp(objetivo, Math.min(1, dt * 3)) : objetivo.clone(); camera.position.copy(S.camP);
-    camera.lookAt(st.x + c * 4, 1.8, st.z + s * 4);
+    camera.lookAt(st.x + c * 3, 1.6 + st.brazo * 1.5, st.z + s * 3);
     if (S.empezado && !S.fin) hud();
     renderer.render(scene, camera);
   }
@@ -299,6 +308,13 @@ function iniciar(op, res){
     $('plCazo').textContent = st.carga > .05 ? `🪣 ${st.carga.toFixed(1)} t de ${MAT[st.mat].n}` : '🪣 Cazo vacío';
     $('plTot').textContent = `📦 ${st.entregado.toFixed(1)} / ${S.pide} t`;
     $('plBr').textContent = `⬆ Brazo ${Math.round(st.brazo * 100)} %`; $('plBr').classList.toggle('mal', st.vuelco > .3);
+    // siguiente paso, para que siempre se sepa qué hacer
+    { const [px, pz] = puntaCazo(), cerca = tolvas.find(t => Math.abs(px - t.x) < t.w / 2 + 2.1 && Math.abs(pz - t.z) < t.w / 2 + .6), pend = tolvas.filter(t => t.t - t.mal < t.meta);
+      let m; if (st.carga <= .05) m = st.brazo > .3 ? '⬇ Baja el brazo y métete en un acopio' : (pend.length ? `1 · Ve al acopio de ${MAT[pend[0].k].n} con el brazo abajo` : '¡Tolvas llenas! Pulsa Terminar');
+      else if (st.brazo < .9) m = '2 · ⬆ Sube el brazo del todo';
+      else if (!cerca) m = `3 · Acércate de frente a la tolva de ${MAT[st.mat].n}`;
+      else m = cerca.k === st.mat ? '4 · 🪣 ¡Pulsa VOLCAR PALA!' : `❌ Esta tolva es de ${MAT[cerca.k].n}`;
+      const e = $('plPaso'); if (e.textContent !== m) e.textContent = m; }
     capa.querySelectorAll('#plTolvas .tv').forEach((el, i) => { const t = tolvas[i], f = Math.min(1, (t.t - t.mal) / t.meta); el.querySelector('i').style.width = Math.round(f * 100) + '%'; el.classList.toggle('ok', f >= 1); });
   }
   S.paso = paso; S.dibujar = dibujar;

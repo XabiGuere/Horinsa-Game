@@ -6,6 +6,8 @@
 //  window.abrirMinijuego({ modo, dif, cliente, chofer, m3, alTerminar }) → Promise
 // =====================================================================
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { cabina, rueda } from './camiones3d.js';
 
 const CSS = `
 #mjCapa{position:fixed;inset:0;z-index:200;background:#000;touch-action:none;user-select:none;-webkit-user-select:none;font-family:system-ui,sans-serif;color:#fff}
@@ -149,11 +151,11 @@ function grua(par, M, x, z){
 }
 function camionBomba(par, M){
   const g = new THREE.Group(); par.add(g);
-  caja(g, 11, .5, 2.5, M.negro, 0, 1.0, 0);                                // chasis
-  caja(g, 2.4, 2.4, 2.5, M.blanco, 4.6, 2.3, 0); caja(g, .1, 1.1, 2.2, M.cristal, 5.81, 2.8, 0); caja(g, 2.42, .35, 2.52, M.rojo, 4.6, 1.5, 0);   // cabina
+  caja(g, 11, .45, 1.0, M.negro, 0, 1.0, 0);                               // chasis
+  cabina(g, 4.5);                                                         // cabina detallada (como la hormigonera)
   caja(g, 7.4, 1.0, 2.3, M.rojo, -1.2, 1.8, 0);                           // carrozado
   caja(g, 2.6, 1.6, 2.3, M.blanco, -4.2, 2.1, 0);                         // tolva y bomba
-  for (const x of [-4, -2.6, 2.8, 4.6]) for (const s of [-1, 1]){ const r = cil(g, .55, .55, .45, M.goma, x, .55, s * 1.2, 16); r.rotation.x = Math.PI / 2; }
+  for (const s of [-1, 1]){ rueda(g, 4.7, s * 1.07, .55, .4); rueda(g, 2.9, s * 1.07, .55, .4); rueda(g, -2.6, s * 1.0, .55, .36, true); rueda(g, -4.0, s * 1.0, .55, .36, true); }
   // estabilizadores abiertos
   for (const [x, s] of [[-3.6, -1], [-3.6, 1], [2.2, -1], [2.2, 1]]){ caja(g, .35, .35, 3.2, M.amarillo, x, 1.2, s * 2.6); caja(g, .3, 1.2, .3, M.amarillo, x, .6, s * 4.1); caja(g, .8, .1, .8, M.tabla, x, .05, s * 4.1); }
   const torre = new THREE.Group(); torre.position.set(-.8, 2.3, 0); g.add(torre);
@@ -173,7 +175,9 @@ function iniciar(op, res){
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; renderer.outputColorSpace = THREE.SRGBColorSpace;
   capa.appendChild(renderer.domElement);
-  const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0xe9dcc6, 60, 420);
+  // reflejos de entorno (cristales, cromados y pintura del camión)
+  const pmrem = new THREE.PMREMGenerator(renderer), envTex = pmrem.fromScene(new RoomEnvironment(), .04).texture; pmrem.dispose();
+  const scene = new THREE.Scene(); scene.environment = envTex; scene.fog = new THREE.Fog(0xe9dcc6, 60, 420);
   // en el móvil en vertical se abre el campo de visión para ver la obra entera
   const fovDe = asp => asp >= 1 ? 58 : Math.min(92, 58 * Math.pow(1 / asp, .62));
   const camera = new THREE.PerspectiveCamera(fovDe(innerWidth / innerHeight), innerWidth / innerHeight, .05, 1500);
