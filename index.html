@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>HORINSA · Lanzarote</title>
+<style>
+:root{--rojo:#d2201f;--panel:rgba(16,20,26,.88);--txt:#eef1f4;--sub:#9aa6b2;--borde:rgba(255,255,255,.1)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0a3a58;color:var(--txt);font-family:system-ui,"Segoe UI",Roboto,sans-serif;overflow:hidden;user-select:none}
+canvas{display:block;touch-action:none;cursor:grab}
+canvas.drag{cursor:grabbing}
+#top{position:fixed;top:0;left:0;right:0;height:54px;display:flex;align-items:center;gap:12px;padding:0 14px;background:var(--panel);z-index:5;border-bottom:1px solid var(--borde)}
+.logo{width:36px;height:36px;background:var(--rojo);color:#fff;font-weight:900;font-size:27px;display:grid;place-items:center;border-radius:3px;font-family:"Arial Black",Arial,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.marca{font-weight:800;letter-spacing:.08em;font-size:18px}
+.marca small{display:block;font-weight:500;letter-spacing:0;font-size:12px;color:var(--sub)}
+#top .esp{flex:1}
+#coord{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums;text-align:right}
+#zoombox{position:fixed;right:356px;top:112px;display:flex;flex-direction:column;gap:6px;z-index:5}
+.btn{width:40px;height:40px;border-radius:8px;border:1px solid var(--borde);background:var(--panel);color:var(--txt);font-size:20px;cursor:pointer;display:grid;place-items:center}
+.btn:hover{background:#2a323c}
+#capas{position:fixed;left:14px;bottom:14px;z-index:5;background:var(--panel);border:1px solid var(--borde);border-radius:10px;padding:10px 12px;font-size:13px;min-width:190px}
+#capas h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--sub)}
+#capas label{display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer}
+.ley{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);padding:2px 0}
+.ley i{display:inline-block;width:26px;height:5px;border-radius:3px}
+#escala{position:fixed;right:14px;bottom:14px;z-index:5;background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--sub)}
+#escala .barra{height:6px;border:2px solid #eef1f4;border-top:none;margin-top:3px}
+#ficha{position:fixed;left:14px;top:112px;z-index:6;width:290px;background:var(--panel);border:1px solid var(--borde);border-radius:12px;padding:14px 16px;display:none;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+#ficha h3{margin:0 0 2px;font-size:18px}
+#ficha{width:320px;max-height:calc(100% - 130px);overflow:auto}
+#ficha .bt{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+#ficha .bt .jb{flex:1 1 calc(50% - 6px);height:auto;min-height:34px;white-space:normal;line-height:1.2;padding:7px 8px;font-size:12.5px;text-align:left}
+#ficha .s span:first-child{white-space:nowrap}
+#ficha .tipo{color:var(--sub);font-size:12px;text-transform:uppercase;letter-spacing:.07em}
+#ficha p{font-size:13.5px;line-height:1.45;margin:10px 0 0;color:#d5dbe1}
+#ficha .cerrar{position:absolute;right:10px;top:8px;background:none;border:none;color:var(--sub);font-size:20px;cursor:pointer}
+#carga{position:fixed;inset:0;display:grid;place-items:center;background:#0a3a58;z-index:20;transition:opacity .4s}
+#carga div{text-align:center}
+#carga .logo{width:72px;height:72px;font-size:54px;margin:0 auto 14px}
+.btnTxt{height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--borde);background:#2a323c;color:var(--txt);font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btnTxt:hover{background:#36404c}.btnTxt.on{background:var(--rojo);border-color:var(--rojo)}
+#marcar{position:fixed;left:14px;top:66px;z-index:7;width:300px;max-height:calc(100% - 90px);overflow:auto;background:var(--panel);border:1px solid var(--borde);border-radius:12px;padding:12px 14px;display:none;box-shadow:0 8px 30px rgba(0,0,0,.4);font-size:13px}
+#marcar h4{margin:0 0 4px;font-size:15px}
+#marcar .ayuda{color:var(--sub);font-size:12.5px;line-height:1.4;margin:0 0 10px}
+.tipos{display:flex;flex-direction:column;gap:4px}
+.tipos label{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:7px;cursor:pointer}
+.tipos label:hover{background:rgba(255,255,255,.06)}
+.tipos input{margin:0}
+.chip{min-width:24px;height:20px;padding:0 4px;border-radius:4px;color:#fff;font-weight:800;font-size:11px;display:inline-grid;place-items:center;border:1.5px solid #fff}
+#mNota{width:100%;margin:8px 0 2px;padding:7px 9px;border-radius:7px;border:1px solid var(--borde);background:#0f1418;color:var(--txt);font-size:13px}
+#mLista{margin-top:10px;border-top:1px solid var(--borde);padding-top:8px}
+.fila{display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer}
+.fila .tx{flex:1;min-width:0}.fila .tx small{display:block;color:var(--sub);font-size:11px}
+.fila button{background:none;border:none;color:#e57373;font-size:18px;cursor:pointer;padding:0 4px}
+#mExport{width:100%;height:120px;margin-top:8px;display:none;background:#0f1418;color:#cfe3d0;border:1px solid var(--borde);border-radius:7px;font:12px ui-monospace,Consolas,monospace;padding:6px}
+canvas.marcando{cursor:crosshair}
+/* ---- Juego ---- */
+#hud{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--borde);border-radius:999px;padding:5px 8px 5px 16px;font-size:13.5px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+#hud #jFecha{color:var(--sub);text-transform:capitalize}
+#hud #jHora{font-size:19px;font-variant-numeric:tabular-nums;font-weight:800}
+#hud #jHora.extra{color:#ff8a65}
+#hud #jHora::before{content:attr(data-clima);font-size:13px;margin-right:4px;font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;font-weight:400}
+#hud #jEstado{color:var(--sub);font-size:12px}
+#jVel{display:flex;gap:3px}
+#jSel{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:40;background:rgba(20,26,33,.96);border:1px solid #3fae5a;border-radius:12px;padding:8px 10px;max-width:calc(100vw - 32px);box-shadow:0 6px 24px rgba(0,0,0,.45);color:var(--txt);font-size:13px}
+#jSel .t{font-weight:700;margin-bottom:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#jSel .bt{display:flex;flex-wrap:wrap;gap:5px}#jSel select{background:#222a33;color:var(--txt);border:1px solid var(--borde);border-radius:7px;height:28px;max-width:220px}
+@media (max-width:600px){#jSel{top:100px;bottom:auto;font-size:12px;padding:6px 8px}#jSel .jb{padding:4px 7px;font-size:11.5px}#jObjB{padding:0 4px!important;font-size:11px!important;height:26px!important}#jVel button{min-width:25px!important;padding:0 2px!important}#jEstado{display:none}#hud{gap:4px}}
+#jObjB{height:28px;border-radius:7px;border:1px solid var(--borde);background:#222a33;color:var(--txt);font-size:12.5px;font-weight:700;cursor:pointer;padding:0 7px;white-space:nowrap}
+#jObjB.hecho{border-color:#3fae5a;color:#7fe39a}
+#jVel button{height:28px;min-width:34px;border-radius:7px;border:1px solid var(--borde);background:#222a33;color:var(--txt);font-size:12.5px;font-weight:700;cursor:pointer}
+#jVel button.on{background:var(--rojo);border-color:var(--rojo)}
+#jCaja{font-weight:800;color:#8fe39d;font-variant-numeric:tabular-nums}#jCaja.neg{color:#ff7b72}
+#jRep{color:#f6c945;font-weight:700}
+#jNivel{position:relative;font-weight:800;font-size:12px;background:#2a323c;border-radius:6px;padding:3px 8px 6px;margin-right:6px;overflow:hidden}
+#jNivel i{position:absolute;left:0;bottom:0;height:3px;background:#5aa9e6}
+.oferta{margin-top:8px}.oferta input{width:100%;accent-color:#d2201f}
+#jPanel{position:fixed;right:14px;top:112px;bottom:14px;width:330px;z-index:6;background:var(--panel);border:1px solid var(--borde);border-radius:12px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+#jPanel.plegado{bottom:auto}#jPanel.plegado #jCuerpo{display:none}
+#jTabs{display:flex;gap:2px;padding:6px;border-bottom:1px solid var(--borde)}
+#jTabs button{flex:1;height:32px;border:none;border-radius:7px;background:none;color:var(--sub);font-size:12.5px;font-weight:700;cursor:pointer;position:relative}
+#jTabs button.on{background:#2a323c;color:var(--txt)}
+#jTabs button.aviso::after{content:'';position:absolute;top:5px;right:6px;width:7px;height:7px;border-radius:50%;background:#ff5a4f}
+#jNLl,#jNAv{background:#ff5a4f;color:#fff;border-radius:9px;padding:0 5px;font-size:11px;margin-left:3px}#jNLl:empty,#jNAv:empty{display:none}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.chip2{background:#243447;border:1px solid #35506d;color:#bfe0ff;border-radius:6px;padding:1px 6px;font-size:11px}
+.curso{background:#151b21;border:1px solid var(--borde);border-radius:8px;padding:8px;margin-top:8px}.curso .t{font-size:13px}
+#jPlegar{width:30px;flex:none!important}
+#jCuerpo{overflow:auto;padding:10px;flex:1}
+#jCuerpo h5{margin:12px 2px 6px;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--sub)}
+.card{background:#1d242c;border:1px solid var(--borde);border-radius:10px;padding:10px 11px;margin-bottom:8px}
+.card.mini{padding:8px 10px}.card[data-acc=ver]{cursor:pointer}.card[data-acc=ver]:hover{background:#242c35}
+.card.llamada{border-color:rgba(246,201,69,.45)}.card.llamada.nueva{animation:entra .35s ease}
+@keyframes entra{from{transform:translateX(20px);opacity:0}}
+.card .t{font-weight:700;font-size:14px}.card .t small{color:var(--sub);font-weight:500;font-size:11.5px;margin-left:4px}
+.card .s{color:#c3cbd3;font-size:12.5px;margin-top:4px;line-height:1.4}
+.card .espera{color:#f6c945}
+.datos{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;font-size:12.5px}
+.datos span{background:#2a323c;border-radius:5px;padding:2px 6px}
+.bt{display:flex;gap:6px;margin-top:8px}
+.jb{flex:1;height:32px;border-radius:8px;border:1px solid var(--borde);background:#2a323c;color:var(--txt);font-weight:700;font-size:13px;cursor:pointer;padding:0 10px}
+.jb:hover{background:#36404c}.jb.ok{background:#2f8f4a;border-color:#2f8f4a}.jb.ok:hover{background:#38a457}
+.jb.peligro{background:none;color:#ff8a80;border-color:rgba(255,138,128,.4)}
+.jb:disabled{opacity:.45;cursor:not-allowed}
+.jb.grande{width:100%;height:44px;font-size:15px;margin-top:14px;background:var(--rojo);border-color:var(--rojo)}
+.bar{height:6px;background:#2a323c;border-radius:4px;margin-top:5px;overflow:hidden}.bar i{display:block;height:100%;border-radius:4px}
+.tolvas{display:flex;gap:6px;margin:8px 0}.tolvas i{width:30px;height:24px;border-radius:3px 3px 10px 10px;border:2px dashed #46505c}.tolvas i.on{background:#7d5a3a;border:2px solid #b08458}
+.chk{display:flex;align-items:center;gap:7px;font-size:12.5px;margin-top:8px;color:#c3cbd3;cursor:pointer}
+.vacio{color:var(--sub);font-size:12.5px;padding:8px 2px;line-height:1.45}
+.pos{color:#8fe39d}.neg{color:#ff8a80}
+#jModal{position:fixed;inset:0;z-index:30;background:rgba(5,10,15,.6);display:none;place-items:center;padding:16px}
+#jModalCaja{width:min(440px,100%);max-height:calc(100% - 20px);overflow:auto;background:#151b21;border:1px solid var(--borde);border-radius:14px;padding:20px 22px;font-size:14px;line-height:1.5;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+#jModalCaja h2{margin:0 0 2px;font-size:21px}#jModalCaja .sub{color:var(--sub);font-size:13px;margin:4px 0 10px}
+#jModalCaja p.ok{color:#8fe39d}#jModalCaja p.mal{color:#ff8a80}
+.logoG{width:60px;height:60px;background:var(--rojo);color:#fff;font:900 44px "Arial Black",Arial,sans-serif;display:grid;place-items:center;border-radius:4px;margin-bottom:12px}
+.tabla{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px}.tabla td{padding:5px 2px;border-bottom:1px solid rgba(255,255,255,.06)}.tabla td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.tabla tr.total td{font-weight:800;font-size:15px;border-top:2px solid rgba(255,255,255,.2)}
+.peticion{background:#2a2418;border:1px solid rgba(246,201,69,.4);border-radius:10px;padding:10px;margin:10px 0}.peticion div{display:flex;gap:6px;margin-top:8px}
+#jLlam{position:fixed;left:12px;top:108px;z-index:26;display:flex;flex-direction:column;gap:5px;width:min(340px,calc(100% - 84px))}
+#jLlam .ll{background:rgba(16,20,26,.95);border:1px solid rgba(246,201,69,.5);border-left:4px solid #f6c945;border-radius:9px;padding:6px 8px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.35);display:flex;align-items:center;gap:6px}
+#jLlam .ll .tx{flex:1;min-width:0;line-height:1.25}#jLlam .ll .tx b{color:#fff}#jLlam .ll small{display:block;color:#9aa6b2;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#jLlam .ll small.prisa{color:#ff8a80}#jLlam .ll button{border:0;border-radius:6px;padding:6px 9px;font-weight:700;font-size:12px;cursor:pointer;background:#2e3a46;color:#fff}#jLlam .ll button.ok{background:#2e9e4f}
+#jLlam .mas{font-size:11.5px;color:#cfd8e0;background:rgba(16,20,26,.85);border-radius:7px;padding:3px 8px;align-self:flex-start;cursor:pointer}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);top:108px;z-index:25;display:flex;flex-direction:column;gap:5px;align-items:center;pointer-events:none;width:min(440px,calc(100% - 28px))}
+.toast{background:rgba(16,20,26,.92);border:1px solid var(--borde);border-left:4px solid #5aa9e6;border-radius:8px;padding:6px 10px;font-size:12.5px;transition:opacity .6s;box-shadow:0 4px 14px rgba(0,0,0,.3);animation:tEntra .3s ease}
+@keyframes tEntra{from{opacity:0;transform:translateY(-6px)}}
+.toast.bien{border-left-color:#3fae5a}.toast.mal{border-left-color:#ff5a4f}
+@media (max-width:600px){#hud{left:6px;right:6px;transform:none;justify-content:space-between;gap:4px;padding:3px 4px 3px 10px;border-radius:12px}
+  #hud #jHora{font-size:16px}#jVel{gap:2px}#jVel button{min-width:30px;height:28px;padding:0 4px;font-size:11.5px}#jRep{display:none}#jNivel{margin-right:0}
+  .marca small{display:none}#top{gap:8px;padding:0 10px}#bModo{padding:0 8px;font-size:12px}#zoombox .btn{width:38px;height:38px}#credito{font-size:8.5px}}
+@media (max-width:900px){#zoombox{right:14px;top:auto;bottom:calc(42% + 20px)}#jPanel{left:10px;right:10px;width:auto;top:auto;bottom:10px;height:42%}#jPanel.plegado{height:auto;bottom:10px}#capas{display:none}#escala{display:none}#hud{top:58px;gap:8px;padding:4px 6px 4px 12px;font-size:12px}#hud #jFecha,#hud #jEstado{display:none}#bMarcar{font-size:0;padding:0 10px}#bMarcar::before{content:'📍';font-size:15px}#toasts{top:104px;left:10px;transform:none;width:calc(100% - 70px);align-items:flex-start}}
+@media (max-width:640px){#marcar{top:auto;bottom:10px;left:10px;right:10px;width:auto;max-height:46%}#marcar .ayuda{display:none}.tipos{display:grid;grid-template-columns:1fr 1fr;font-size:12px}#capas{min-width:0;font-size:12px;padding:8px}#capas .leyenda{display:none}#ficha{left:12px;right:12px;width:auto;top:auto;bottom:70px}#coord{display:none}}
+</style>
+</head>
+<body>
+<div id="carga"><div><div class="logo">H</div><div class="marca">HORINSA</div><div style="color:#9aa6b2;margin-top:6px;font-size:14px" id="cargaTxt">Levantando la isla de Lanzarote…</div></div></div>
+
+<div id="top">
+  <div class="logo">H</div>
+  <div class="marca">HORINSA<small>Lanzarote · mapa base</small></div>
+  <div class="esp"></div>
+  <button class="btnTxt" id="bModo" style="display:none">Ver en 2D</button>
+  <button class="btnTxt" id="bMarcar">📍 Marcar en el mapa</button>
+  <div id="coord">—</div>
+</div>
+
+<div id="marcar">
+  <h4>Marcar en el mapa</h4>
+  <p class="ayuda">Elige qué vas a marcar y haz clic en su sitio exacto (acércate con el zoom para afinar). La planta y la cantera de HORINSA se mueven; lo demás se puede marcar varias veces.</p>
+  <div class="tipos" id="mTipos"></div>
+  <input id="mNota" placeholder="Nota opcional (ej.: «planta de asfalto», «muelle»)">
+  <div id="mLista"></div>
+  <div style="display:flex;gap:8px;margin-top:10px">
+    <button class="btnTxt" id="mCopiar" style="flex:1">Copiar para Claude</button>
+    <button class="btnTxt" id="mCerrar">Cerrar</button>
+  </div>
+  <textarea id="mExport" readonly></textarea>
+</div>
+
+<div id="zoombox">
+  <button class="btn" id="zin" title="Acercar">+</button>
+  <button class="btn" id="zout" title="Alejar">−</button>
+  <button class="btn" id="zhome" title="Ver toda la isla">⌂</button>
+  <button class="btn solo3d" id="rIzq" title="Girar a la izquierda">⟲</button>
+  <button class="btn solo3d" id="rDer" title="Girar a la derecha">⟳</button>
+  <button class="btn solo3d" id="rInc" title="Inclinar / vista cenital">◩</button>
+</div>
+
+<div id="capas">
+  <h4>Capas</h4>
+  <label><input type="checkbox" id="cNom" checked> Nombres</label>
+  <label><input type="checkbox" id="cCar" checked> Carreteras</label>
+  <label><input type="checkbox" id="cEdi" checked> Edificios</label>
+  <label><input type="checkbox" id="cPoi" checked> Puertos y lugares</label>
+  <div class="leyenda" style="margin-top:8px;border-top:1px solid var(--borde);padding-top:8px">
+    <div class="ley"><i style="background:#f39c34"></i>Autovía</div>
+    <div class="ley"><i style="background:#ffd866"></i>Carretera principal (LZ)</div>
+    <div class="ley"><i style="background:#fbf8f0"></i>Carretera secundaria</div>
+    <div class="ley"><i style="background:repeating-linear-gradient(90deg,#e8d7b0 0 5px,transparent 5px 9px)"></i>Pista de tierra</div>
+  </div>
+</div>
+
+<div id="escala"><span id="escTxt">1 km</span><div class="barra" id="escBar" style="width:60px"></div></div>
+
+<div id="ficha"><button class="cerrar" id="fCerrar">×</button><div class="tipo" id="fTipo"></div><h3 id="fNom"></h3><div id="fCuerpo"></div></div>
+
+<div id="hud">
+  <span id="jFecha">—</span><b id="jHora">07:30</b><span id="jEstado"></span>
+  <span id="jVel"><button data-v="0" title="Pausa (espacio)">❚❚</button><button data-v="1" title="Velocidad normal">▶</button><button data-v="2">×2</button><button data-v="4">×4</button><button data-v="8">×8</button><button id="jSaltar" title="Saltar a las 22:00 (fin del turno de taller)" style="display:none">⏭</button></span>
+  <span id="jCaja">—</span><span id="jRep">★ 50</span><span id="jNivel">Nv 1</span><button id="jObjB" title="Objetivos del día y de la semana">🎯</button>
+</div>
+<div id="jPanel">
+  <div id="jTabs"><button data-t="llamadas" class="on" id="jTabLl">Obras<span id="jNLl"></span></button><button data-t="flota">Flota</button><button data-t="planta">Planta</button><button data-t="taller" id="jTabTa">Taller<span id="jNAv"></span></button><button data-t="personal">Equipo</button><button id="jPlegar" title="Plegar">▾</button></div>
+  <div id="jCuerpo"></div>
+</div>
+<div id="jModal"><div id="jModalCaja"></div></div>
+<div id="jSel" style="display:none"></div>
+<div id="jLlam"></div>
+<div id="toasts"></div>
+
+<div id="credito" style="position:fixed;right:6px;bottom:2px;z-index:4;font-size:10px;color:rgba(255,255,255,.75);text-shadow:0 1px 2px #000;pointer-events:none">Mapa: © colaboradores de OpenStreetMap · Relieve: Mapzen/AWS Terrain Tiles</div>
+<canvas id="c"></canvas>
+<canvas id="c3" style="display:none;position:fixed;inset:0;width:100%;height:100%"></canvas>
+<canvas id="o3" style="display:none;position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1"></canvas>
+
+<script src="datos/lanzarote-osm.js"></script>
+<script src="datos/relieve.js"></script>
+<script>
+'use strict';
+/* =====================================================================
+   HORINSA · Fase 1: la isla de Lanzarote
+   Coordenadas reales (lat/lon WGS84) proyectadas a km.
+   ===================================================================== */
+const LAT0 = 29.06, LON0 = -13.65;
+const KX = 111.32 * Math.cos(LAT0 * Math.PI / 180), KY = 110.574;
+const P = (lat, lon) => [(lon - LON0) * KX, (LAT0 - lat) * KY];
+const INV = (x, y) => [LAT0 - y / KY, LON0 + x / KX];
+
+const BOUNDS = { latMin: 28.795, latMax: 29.335, lonMin: -13.925, lonMax: -13.375 };
+const [X0, Y0] = P(BOUNDS.latMax, BOUNDS.lonMin);
+const [X1, Y1] = P(BOUNDS.latMin, BOUNDS.lonMax);
+const RES = 0.03; // km por píxel del terreno (30 m)
+const TW = Math.ceil((X1 - X0) / RES), TH = Math.ceil((Y1 - Y0) / RES);
+
+/* ---------------------------- Utilidades ---------------------------- */
+function rngOf(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hash2(i,j){let h=Math.imul(i,374761393)^Math.imul(j,668265263)^0x5bd1e995;h=Math.imul(h^(h>>>13),1274126177);h^=h>>>16;return(h>>>0)/4294967296}
+function vnoise(x,y){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);const a=hash2(xi,yi),b=hash2(xi+1,yi),c=hash2(xi,yi+1),d=hash2(xi+1,yi+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v}
+function fbm(x,y,o){let s=0,a=.5,f=1,n=0;for(let i=0;i<o;i++){s+=a*vnoise(x*f+i*17.3,y*f-i*9.1);n+=a;a*=.5;f*=2.07}return s/n}
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const sstep=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t)};
+const mix3=(c,d,t)=>{c[0]+=(d[0]-c[0])*t;c[1]+=(d[1]-c[1])*t;c[2]+=(d[2]-c[2])*t};
+const hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const kmPoly=arr=>arr.map(([la,lo])=>P(la,lo));
+function pip(pt,poly){let ins=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,yi]=poly[i],[xj,yj]=poly[j];if(((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi))ins=!ins}return ins}
+function roughen(pts,iters,amp,rng){let p=pts;for(let k=0;k<iters;k++){const q=[];for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];q.push(a);const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1;const off=(rng()-.5)*L*amp;q.push([(a[0]+b[0])/2-dy/L*off,(a[1]+b[1])/2+dx/L*off])}p=q}return p}
+
+/* ------------------------------ Geografía ------------------------------ */
+// Línea de costa de Lanzarote (sentido horario desde Punta Fariones)
+const COSTA_LZ = [
+[29.241,-13.470],[29.233,-13.456],[29.222,-13.447],[29.211,-13.433],[29.197,-13.421],[29.180,-13.417],[29.165,-13.424],[29.152,-13.435],[29.141,-13.447],[29.132,-13.457],[29.118,-13.461],[29.104,-13.454],[29.090,-13.459],[29.074,-13.465],[29.056,-13.474],[29.036,-13.484],[29.018,-13.490],[29.002,-13.493],[28.988,-13.502],[28.977,-13.516],[28.969,-13.528],[28.962,-13.539],[28.957,-13.551],[28.953,-13.566],[28.950,-13.581],[28.944,-13.595],[28.935,-13.611],[28.929,-13.628],[28.924,-13.646],[28.920,-13.662],[28.917,-13.681],[28.914,-13.702],[28.904,-13.718],[28.893,-13.733],[28.879,-13.752],[28.864,-13.770],[28.851,-13.782],[28.840,-13.790],[28.846,-13.803],[28.855,-13.814],[28.860,-13.829],[28.857,-13.848],[28.853,-13.869],[28.866,-13.873],[28.886,-13.859],[28.906,-13.846],[28.925,-13.833],[28.938,-13.829],[28.955,-13.837],[28.975,-13.836],[28.991,-13.828],[29.006,-13.818],[29.022,-13.805],[29.040,-13.791],[29.056,-13.769],[29.069,-13.744],[29.081,-13.719],[29.095,-13.695],[29.106,-13.672],[29.117,-13.657],[29.112,-13.631],[29.109,-13.606],[29.111,-13.585],[29.118,-13.566],[29.124,-13.548],[29.139,-13.530],[29.157,-13.515],[29.175,-13.504],[29.192,-13.494],[29.208,-13.487],[29.224,-13.484],[29.236,-13.479]];
+const COSTA_GRACIOSA = [[29.292,-13.497],[29.285,-13.482],[29.272,-13.474],[29.258,-13.478],[29.248,-13.484],[29.238,-13.494],[29.231,-13.502],[29.226,-13.515],[29.224,-13.528],[29.232,-13.538],[29.245,-13.545],[29.260,-13.542],[29.275,-13.530],[29.286,-13.515]];
+const COSTA_MCLARA = [[29.303,-13.536],[29.300,-13.528],[29.294,-13.527],[29.290,-13.534],[29.293,-13.542],[29.299,-13.543]];
+
+const rngC = rngOf(1977);
+// Costa real de OpenStreetMap si está disponible (datos/lanzarote-osm.js); si no, la dibujada a mano
+const REAL = !!(window.OSM && OSM.costa && OSM.costa.length);
+const ISLAS = REAL ? OSM.costa.map(r => kmPoly(r))
+  : [roughen(kmPoly(COSTA_LZ),4,.32,rngC), roughen(kmPoly(COSTA_GRACIOSA),4,.3,rngC), roughen(kmPoly(COSTA_MCLARA),3,.3,rngC)];
+
+// Zonas de terreno
+const Z_LAVA = kmPoly([[28.972,-13.834],[29.000,-13.824],[29.040,-13.794],[29.080,-13.722],[29.108,-13.672],[29.098,-13.658],[29.076,-13.662],[29.062,-13.690],[29.046,-13.702],[29.032,-13.690],[29.016,-13.664],[28.997,-13.680],[28.986,-13.716],[28.972,-13.748],[28.966,-13.782],[28.960,-13.812]]);
+const Z_CORONA = kmPoly([[29.214,-13.452],[29.200,-13.424],[29.162,-13.424],[29.146,-13.442],[29.160,-13.460],[29.188,-13.472]]);
+const Z_GERIA = kmPoly([[28.992,-13.742],[29.004,-13.700],[29.012,-13.668],[28.996,-13.648],[28.972,-13.664],[28.960,-13.716],[28.966,-13.744]]);
+const Z_JABLE = kmPoly([[29.110,-13.604],[29.118,-13.556],[29.098,-13.560],[29.076,-13.576],[29.044,-13.596],[29.012,-13.606],[28.998,-13.628],[29.022,-13.640],[29.062,-13.622],[29.096,-13.628]]);
+const Z_PARQUE = kmPoly([[28.982,-13.836],[29.022,-13.808],[29.062,-13.768],[29.071,-13.744],[29.048,-13.734],[29.036,-13.718],[29.012,-13.724],[28.994,-13.746],[28.984,-13.790]]);
+
+// Relieve: [lat, lon, altura m, radio km, cráter 0-1, tinte 'r' rojo | 'o' ocre | 'n' negro]
+const CONOS = [
+ [29.0170,-13.7700,510,1.4,.35,'r'],[29.0070,-13.7550,400,1.1,.15,'r'],[29.0020,-13.7810,350,1.0,.4,'r'],
+ [29.0130,-13.7380,380,1.1,.45,'r'],[29.0320,-13.7400,330,0.9,.4,'n'],[29.0405,-13.7255,458,1.2,.6,'o'],
+ [29.0510,-13.7150,300,0.8,.4,'r'],[29.1840,-13.4620,609,1.4,.5,'r'],[28.9830,-13.6290,598,1.6,.15,'o'],
+ [28.9680,-13.6650,603,1.4,.12,'o'],[29.0670,-13.5550,452,0.9,.25,'o'],[28.8620,-13.8100,194,0.8,.4,'r'],
+ [29.2620,-13.5120,266,0.9,.3,'r'],[29.2850,-13.5020,157,0.6,.35,'r'],[29.2350,-13.5220,172,0.6,.3,'o'],
+ [29.2985,-13.5350,256,0.5,.2,'r'],[28.9930,-13.5900,440,0.9,.2,'o'],[29.0000,-13.5650,300,0.7,.2,'o'],
+ [29.0620,-13.6460,280,0.8,.35,'r'],[28.9420,-13.7100,330,0.9,.2,'o'],[29.0200,-13.6000,330,0.8,.3,'r']
+];
+const MONTES = [ // nombres que se muestran
+ ['Peñas del Chache',29.1160,-13.5100,671],['Montaña Corona',29.1840,-13.4620,609],['Atalaya de Femés',28.9050,-13.7760,608],
+ ['Guardilama',28.9680,-13.6650,603],['Montaña Blanca',28.9830,-13.6290,598],['Montaña Timanfaya',29.0170,-13.7700,510],
+ ['Caldera Blanca',29.0405,-13.7255,458],['Guanapay',29.0670,-13.5550,452],['Islote de Hilario',29.0070,-13.7550,400],
+ ['Montaña Rajada',29.0020,-13.7810,350],['Montaña Roja',28.8620,-13.8100,194],['Agujas Grandes',29.2620,-13.5120,266],
+ ['Montaña Bermeja',29.2850,-13.5020,157],['Montaña Amarilla',29.2350,-13.5220,172],['Montaña Mina',28.9930,-13.5900,440]
+];
+const PLAYAS = [[28.845,-13.787,1.3],[28.861,-13.836,0.7],[29.120,-13.552,2.2],[28.921,-13.655,1.6],[28.951,-13.583,1.4],[28.958,-13.556,0.45],[29.000,-13.495,0.7],[29.287,-13.503,0.8],[29.230,-13.517,0.7],[29.217,-13.444,0.6],[28.893,-13.732,0.4],[28.915,-13.705,0.3]];
+
+/* ------------------------- Pueblos y ciudades -------------------------
+   [nombre, lat, lon, tipo, municipio, rx km, ry km, giro°]  */
+const PUEBLOS = [
+ ['Arrecife',28.9660,-13.5530,'capital','Arrecife',2.2,1.3,-20],
+ ['Costa Teguise',29.0020,-13.5030,'turis','Teguise',1.4,0.6,-69],
+ ['Playa Honda',28.9550,-13.5800,'pueblo','San Bartolomé',1.3,0.45,-25],
+ ['Puerto del Carmen',28.9260,-13.6650,'turis','Tías',2.1,0.6,-14],
+ ['Playa Blanca',28.8660,-13.8400,'turis','Yaiza',2.6,0.6,0],
+ ['Tías',28.9570,-13.6460,'muni','Tías',0.75,0.6,0],
+ ['San Bartolomé',29.0010,-13.6130,'muni','San Bartolomé',0.75,0.6,0],
+ ['Teguise',29.0600,-13.5640,'muni','Teguise',0.6,0.5,0],
+ ['Yaiza',28.9560,-13.7660,'muni','Yaiza',0.5,0.4,0],
+ ['Tinajo',29.0630,-13.6770,'muni','Tinajo',0.6,0.5,0],
+ ['Haría',29.1450,-13.4990,'muni','Haría',0.55,0.45,0],
+ ['Tahíche',29.0080,-13.5470,'pueblo','Teguise',0.65,0.5,0],
+ ['Nazaret',29.0400,-13.5620,'pueblo','Teguise',0.4,0.3,0],
+ ['Mácher',28.9480,-13.6700,'pueblo','Tías',0.45,0.35,0],
+ ['Conil',28.9750,-13.6720,'aldea','Tías',0.25,0.2,0],
+ ['Masdache',28.9930,-13.6650,'aldea','Tías',0.25,0.2,0],
+ ['Uga',28.9490,-13.7430,'pueblo','Yaiza',0.4,0.3,0],
+ ['Femés',28.9130,-13.7870,'aldea','Yaiza',0.22,0.18,0],
+ ['Las Breñas',28.8930,-13.8040,'aldea','Yaiza',0.35,0.25,0],
+ ['El Golfo',28.9770,-13.8300,'aldea','Yaiza',0.18,0.14,0],
+ ['Puerto Calero',28.9180,-13.7050,'turis','Yaiza',0.35,0.25,0],
+ ['Playa Quemada',28.8940,-13.7300,'aldea','Yaiza',0.15,0.12,0],
+ ['Mancha Blanca',29.0440,-13.6900,'pueblo','Tinajo',0.35,0.3,0],
+ ['La Vegueta',29.0600,-13.6590,'aldea','Tinajo',0.28,0.22,0],
+ ['La Santa',29.1090,-13.6520,'pueblo','Tinajo',0.4,0.3,0],
+ ['Tiagua',29.0490,-13.6260,'aldea','Teguise',0.3,0.25,0],
+ ['Soo',29.0850,-13.6340,'aldea','Teguise',0.3,0.25,0],
+ ['Muñique',29.0750,-13.6120,'aldea','Teguise',0.2,0.18,0],
+ ['Tao',29.0360,-13.5960,'aldea','Teguise',0.22,0.18,0],
+ ['Mozaga',29.0280,-13.6140,'aldea','San Bartolomé',0.22,0.18,0],
+ ['Güime',28.9770,-13.5970,'aldea','San Bartolomé',0.3,0.25,0],
+ ['Caleta de Famara',29.1130,-13.5660,'turis','Teguise',0.4,0.28,0],
+ ['Los Valles',29.0880,-13.5340,'aldea','Teguise',0.25,0.2,0],
+ ['Guatiza',29.0800,-13.4830,'pueblo','Teguise',0.35,0.3,0],
+ ['Mala',29.0990,-13.4730,'aldea','Haría',0.3,0.25,0],
+ ['Charco del Palo',29.1040,-13.4590,'aldea','Haría',0.15,0.12,0],
+ ['Arrieta',29.1340,-13.4630,'pueblo','Haría',0.35,0.3,0],
+ ['Punta Mujeres',29.1450,-13.4470,'pueblo','Haría',0.35,0.25,0],
+ ['Máguez',29.1610,-13.4900,'aldea','Haría',0.3,0.25,0],
+ ['Ye',29.1850,-13.4810,'aldea','Haría',0.2,0.16,0],
+ ['Órzola',29.2210,-13.4510,'pueblo','Haría',0.3,0.22,0],
+ ['Caleta de Sebo',29.2325,-13.5040,'pueblo','Teguise (La Graciosa)',0.25,0.18,0],
+ ['Pedro Barba',29.2510,-13.4870,'aldea','Teguise (La Graciosa)',0.08,0.07,0]
+];
+
+/* ----------------------------- Carreteras ----------------------------- */
+// t: 'auto' autovía | 'prin' principal | 'sec' secundaria | 'pista' tierra
+const CARRETERAS = [
+ {id:'LZ-1',t:'auto',p:[[28.962,-13.545],[28.978,-13.545],[28.995,-13.546],[29.008,-13.548]]},
+ {id:'LZ-1',t:'prin',p:[[29.008,-13.548],[29.022,-13.535],[29.040,-13.518],[29.058,-13.500],[29.078,-13.485],[29.098,-13.474],[29.118,-13.466],[29.133,-13.464],[29.147,-13.454],[29.160,-13.441],[29.175,-13.437],[29.192,-13.440],[29.208,-13.446],[29.221,-13.451]]},
+ {id:'LZ-2',t:'auto',p:[[28.968,-13.560],[28.965,-13.575],[28.961,-13.590],[28.957,-13.605],[28.955,-13.620],[28.955,-13.635]]},
+ {id:'LZ-2',t:'prin',p:[[28.955,-13.635],[28.957,-13.646],[28.951,-13.665],[28.946,-13.690],[28.946,-13.715],[28.949,-13.743],[28.955,-13.763],[28.945,-13.780],[28.926,-13.790],[28.906,-13.798],[28.886,-13.808],[28.872,-13.821],[28.865,-13.833]]},
+ {id:'',t:'sec',p:[[28.968,-13.560],[28.965,-13.552],[28.962,-13.545]]},
+ {id:'',t:'sec',p:[[28.962,-13.545],[28.965,-13.537],[28.970,-13.529],[28.973,-13.523]]},
+ {id:'LZ-3',t:'auto',p:[[28.968,-13.560],[28.977,-13.556],[28.985,-13.548],[28.990,-13.535],[28.985,-13.522],[28.973,-13.523]]},
+ {id:'LZ-10',t:'prin',p:[[29.008,-13.548],[29.025,-13.556],[29.040,-13.562],[29.058,-13.563],[29.072,-13.552],[29.088,-13.535],[29.100,-13.522],[29.113,-13.513],[29.126,-13.505],[29.138,-13.502],[29.145,-13.499]]},
+ {id:'LZ-20',t:'prin',p:[[28.977,-13.556],[28.985,-13.575],[28.993,-13.595],[29.001,-13.613],[29.015,-13.620],[29.030,-13.625],[29.045,-13.630],[29.052,-13.645],[29.058,-13.660],[29.063,-13.677]]},
+ {id:'LZ-30',t:'prin',p:[[29.058,-13.563],[29.050,-13.580],[29.040,-13.597],[29.028,-13.614],[29.012,-13.640],[28.998,-13.660],[28.990,-13.680],[28.982,-13.700],[28.972,-13.720],[28.960,-13.735],[28.949,-13.743]]},
+ {id:'LZ-40',t:'prin',p:[[28.955,-13.620],[28.941,-13.630],[28.931,-13.645],[28.925,-13.660],[28.921,-13.675],[28.919,-13.690],[28.918,-13.705]]},
+ {id:'LZ-67',t:'prin',p:[[28.956,-13.766],[28.972,-13.770],[28.990,-13.768],[29.005,-13.755],[29.018,-13.735],[29.030,-13.715],[29.040,-13.698],[29.044,-13.690]]},
+ {id:'LZ-201',t:'sec',p:[[29.145,-13.499],[29.155,-13.494],[29.161,-13.490],[29.172,-13.486],[29.185,-13.481],[29.198,-13.481],[29.2125,-13.4805]]},
+ {id:'',t:'sec',p:[[29.185,-13.481],[29.195,-13.472],[29.205,-13.462],[29.215,-13.455],[29.221,-13.451]]},
+ {id:'',t:'sec',p:[[29.145,-13.499],[29.141,-13.486],[29.136,-13.472],[29.133,-13.464]]},
+ {id:'',t:'sec',p:[[29.044,-13.690],[29.053,-13.684],[29.063,-13.677]]},
+ {id:'',t:'sec',p:[[29.063,-13.677],[29.080,-13.672],[29.095,-13.664],[29.109,-13.652]]},
+ {id:'',t:'sec',p:[[29.060,-13.564],[29.075,-13.574],[29.092,-13.575],[29.104,-13.570],[29.113,-13.566]]},
+ {id:'',t:'sec',p:[[29.049,-13.626],[29.068,-13.630],[29.085,-13.634]]},
+ {id:'',t:'sec',p:[[29.085,-13.634],[29.090,-13.618],[29.098,-13.596],[29.106,-13.578],[29.113,-13.566]]},
+ {id:'',t:'prin',p:[[29.008,-13.548],[29.005,-13.530],[29.003,-13.514],[29.002,-13.503]]},
+ {id:'',t:'sec',p:[[29.001,-13.613],[28.990,-13.618],[28.977,-13.625],[28.965,-13.640],[28.957,-13.646]]},
+ {id:'',t:'sec',p:[[28.957,-13.646],[28.942,-13.654],[28.928,-13.660]]},
+ {id:'',t:'sec',p:[[28.928,-13.789],[28.920,-13.790],[28.913,-13.787]]},
+ {id:'',t:'sec',p:[[28.913,-13.787],[28.906,-13.766],[28.899,-13.746],[28.894,-13.731]]},
+ {id:'',t:'sec',p:[[28.956,-13.766],[28.964,-13.785],[28.971,-13.805],[28.977,-13.826]]},
+ {id:'',t:'sec',p:[[28.977,-13.827],[28.962,-13.832],[28.948,-13.831],[28.936,-13.825],[28.918,-13.816],[28.902,-13.808],[28.893,-13.804],[28.889,-13.807]]},
+ {id:'',t:'sec',p:[[28.977,-13.597],[28.985,-13.590],[28.993,-13.595]]},
+ {id:'',t:'sec',p:[[29.080,-13.484],[29.075,-13.470]]},
+ {id:'',t:'pista',p:[[28.860,-13.818],[28.855,-13.808],[28.849,-13.798],[28.844,-13.788]]},
+ {id:'',t:'pista',p:[[29.2325,-13.504],[29.240,-13.496],[29.251,-13.487]]},
+ {id:'',t:'pista',p:[[29.2325,-13.504],[29.249,-13.511],[29.266,-13.513],[29.284,-13.506]]},
+ {id:'',t:'pista',p:[[29.2325,-13.504],[29.229,-13.517]]},
+ {id:'',t:'pista',p:[[29.005,-13.755],[29.007,-13.755]]}
+].map(r=>({...r,k:kmPoly(r.p)}));
+// Red real de OpenStreetMap: sustituye a las carreteras dibujadas a mano (menos las pistas de tierra)
+if (REAL && OSM.vias){
+  const TIPO = {motorway:'auto',trunk:'auto',primary:'prin',secondary:'sec',tertiary:'sec',unclassified:'sec',residential:'calle',living_street:'calle',track:'pista'};
+  const pistas = CARRETERAS.filter(r=>r.t==='pista');
+  CARRETERAS.length = 0;
+  for (const v of OSM.vias){ const t=TIPO[v.h]; if(!t||v.p.length<2)continue; const k=kmPoly(v.p); k.osm=true; CARRETERAS.push({id:/^LZ-?\d/.test(v.r)?v.r.split(';')[0].replace('LZ','LZ-').replace('LZ--','LZ-'):'',t,n:v.n,p:v.p,k,osm:true,j:v.j||0}); }
+  CARRETERAS.push(...pistas);
+  // centros de los pueblos según OSM (si coincide el nombre y está cerca)
+  const norm=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/^(la|el|los|las) /,'');
+  for (const t of PUEBLOS){ const l=OSM.lugares.find(l=>norm(l.n)===norm(t[0])); if(l&&Math.hypot((l.la-t[1])*110,(l.lo-t[2])*97)<3){t[1]=l.la;t[2]=l.lo} }
+}
+const RUTAS_MAR = [
+ {n:'Ferry a Corralejo (Fuerteventura)',p:[[28.859,-13.828],[28.835,-13.845],[28.800,-13.862]]},
+ {n:'Barco a La Graciosa',p:[[29.222,-13.448],[29.230,-13.470],[29.231,-13.498]]}
+].map(r=>({...r,k:kmPoly(r.p)}));
+
+/* ------------------------- Puertos y lugares ------------------------- */
+const LUGARES = [
+ {t:'puerto',n:'Puerto de Arrecife (Los Mármoles)',la:28.9690,lo:-13.5285,d:'Puerto comercial de la isla y muelle de cruceros. Aquí llegan el cemento a granel y los áridos que vengan de fuera de la isla.'},
+ {t:'puerto',n:'Marina Lanzarote',la:28.9575,lo:-13.5410,d:'Puerto deportivo de Arrecife.'},
+ {t:'puerto',n:'Puerto de Playa Blanca',la:28.8590,lo:-13.8280,d:'Ferris a Corralejo (Fuerteventura). Salida natural para crecer hacia otras islas.'},
+ {t:'puerto',n:'Marina Rubicón',la:28.8565,lo:-13.8160,d:'Puerto deportivo de Playa Blanca.'},
+ {t:'puerto',n:'Puerto Calero',la:28.9150,lo:-13.7040,d:'Puerto deportivo.'},
+ {t:'puerto',n:'Puerto del Carmen (Varadero)',la:28.9195,lo:-13.6740,d:'Muelle pesquero y de recreo.'},
+ {t:'puerto',n:'Puerto de Órzola',la:29.2225,lo:-13.4480,d:'Barcos a Caleta de Sebo (La Graciosa).'},
+ {t:'puerto',n:'Puerto de Caleta de Sebo',la:29.2310,lo:-13.5030,d:'Único puerto de La Graciosa. Todo lo que se construya allí llega en barco.'},
+ {t:'aero',n:'Aeropuerto César Manrique-Lanzarote',la:28.9465,lo:-13.6055,d:'Aeropuerto (ACE), junto a Playa Honda.'},
+ {t:'poi',n:'Parque Nacional de Timanfaya',la:29.0070,lo:-13.7550,d:'Montañas del Fuego. Zona protegida: no se puede construir ni abrir canteras.'},
+ {t:'poi',n:'Mirador del Río',la:29.2137,lo:-13.4810,d:'Mirador sobre el Risco de Famara y La Graciosa.'},
+ {t:'poi',n:'Jameos del Agua',la:29.1570,lo:-13.4300,d:'Centro de Arte, Cultura y Turismo en un tubo volcánico.'},
+ {t:'poi',n:'Cueva de los Verdes',la:29.1580,lo:-13.4400,d:'Tubo volcánico del volcán de La Corona.'},
+ {t:'poi',n:'Salinas de Janubio',la:28.9370,lo:-13.8220,d:'Salinas junto a la laguna de Janubio.'},
+ {t:'poi',n:'Jardín de Cactus',la:29.0810,lo:-13.4770,d:'Guatiza.'},
+ {t:'poi',n:'Monumento al Campesino',la:29.0260,lo:-13.6110,d:'Mozaga, centro geográfico de la isla.'},
+ {t:'poi',n:'Fundación César Manrique',la:29.0050,lo:-13.5560,d:'Taro de Tahíche.'}
+];
+
+/* ---------------------- HORINSA (ubicación provisional) ---------------------- */
+const HORINSA = {
+ planta:{n:'Planta HORINSA nº 1',la:28.95872,lo:-13.60673,lineas:1,tolvas:3},
+ cantera:{n:'Cantera HORINSA',la:28.95970,lo:-13.63005}
+};
+
+const ZONAS_TXT = [
+ ['Montañas del Fuego',29.020,-13.760,14],['Risco de Famara',29.170,-13.505,13],['El Jable',29.070,-13.600,13],['La Geria',28.982,-13.700,13],
+ ['Malpaís de la Corona',29.178,-13.440,12],['Los Ajaches',28.880,-13.760,13],['El Rubicón',28.890,-13.840,12],['La Graciosa',29.262,-13.528,15]
+];
+const MAR_TXT = [['OCÉANO  ATLÁNTICO',29.080,-13.860,20],['El Río',29.230,-13.490,12],['La Bocaina',28.812,-13.850,13],['Montaña Clara',29.312,-13.535,11]];
+
+/* =======================================================================
+   GENERACIÓN DEL TERRENO
+   ======================================================================= */
+function toPix(x,y){return[(x-X0)/RES,(y-Y0)/RES]}
+function makeMask(polys,blur){
+  const c=document.createElement('canvas');c.width=TW;c.height=TH;
+  const g=c.getContext('2d',{willReadFrequently:true});
+  if(blur)g.filter=`blur(${blur}px)`;
+  g.fillStyle='#fff';
+  for(const p of polys){g.beginPath();p.forEach(([x,y],i)=>{const[X,Y]=toPix(x,y);i?g.lineTo(X,Y):g.moveTo(X,Y)});g.closePath();g.fill()}
+  const d=g.getImageData(0,0,TW,TH).data,m=new Uint8Array(TW*TH);
+  for(let i=0;i<m.length;i++)m[i]=d[i*4+3];
+  return m;
+}
+
+/* ---------- Relieve real: teselas Terrarium (zoom 12) en datos/dem ---------- */
+const DEM_Z=12, DEM_X=[1889,1895], DEM_Y=[1698,1705];
+function cargarDEM(){
+  // preferido: rejilla ya preparada en datos/relieve.js (un solo archivo, carga rápida)
+  if(window.RELIEVE&&RELIEVE.b64){const bin=atob(RELIEVE.b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);RELIEVE.d=new Int16Array(u.buffer);window.DEM='rejilla';return Promise.resolve()}
+  const tiles=new Map(),pend=[];
+  for(let x=DEM_X[0];x<=DEM_X[1];x++)for(let y=DEM_Y[0];y<=DEM_Y[1];y++)pend.push(new Promise(ok=>{
+    const im=new Image();im.onload=()=>{try{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0);tiles.set(x+'_'+y,g.getImageData(0,0,256,256).data)}catch(e){}ok()};
+    im.onerror=()=>ok();im.src=`datos/dem/${DEM_Z}_${x}_${y}.png`}));
+  return Promise.all(pend).then(()=>{if(tiles.size>=40)window.DEM=tiles;else console.warn('Relieve real no disponible: se usa el aproximado')});
+}
+function demPix(X,Y){const tx=Math.floor(X/256),ty=Math.floor(Y/256),d=window.DEM.get(tx+'_'+ty);if(!d)return 0;const i=((Math.floor(Y)-ty*256)*256+(Math.floor(X)-tx*256))*4;return d[i]*256+d[i+1]+d[i+2]/256-32768}
+function demAt(lat,lon){
+  if(window.DEM==='rejilla'){const r=RELIEVE,X=(lon-r.lo0)/r.paso,Y=(r.la1-lat)/r.paso,i=Math.floor(X),j=Math.floor(Y),fx=X-i,fy=Y-j;
+    const g=(a,b)=>a<0||b<0||a>=r.w||b>=r.h?0:r.d[b*r.w+a];
+    return (g(i,j)*(1-fx)+g(i+1,j)*fx)*(1-fy)+(g(i,j+1)*(1-fx)+g(i+1,j+1)*fx)*fy}
+  const n=Math.pow(2,DEM_Z)*256,lr=lat*Math.PI/180;
+  const X=(lon+180)/360*n-.5,Y=(1-Math.log(Math.tan(lr)+1/Math.cos(lr))/Math.PI)/2*n-.5;
+  const x0=Math.floor(X),y0=Math.floor(Y),fx=X-x0,fy=Y-y0;
+  const a=demPix(x0,y0),b=demPix(x0+1,y0),c=demPix(x0,y0+1),d=demPix(x0+1,y0+1);
+  return (a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy;
+}
+
+let EDIFICIOS=[], CELDAS=new Map(), LAND=null;
+const CELDA=1; // km para indexado
+
+/* Accesos: si una cantera o planta queda lejos de una vía, se le hace una carreterita
+   desde el punto más cercano de la carretera más próxima (asfalto estrecho).          */
+function crearAccesos(){
+  for(let i=CARRETERAS.length-1;i>=0;i--)if(CARRETERAS[i].acceso)CARRETERAS.splice(i,1);
+  const sitios=[{la:HORINSA.cantera.la,lo:HORINSA.cantera.lo,r:.13,n:'Acceso a la cantera HORINSA'},{la:HORINSA.planta.la,lo:HORINSA.planta.lo,r:.09,n:'Acceso a la planta HORINSA'}];
+  for(const m of (typeof MARCAS!=='undefined'?MARCAS:[])){if(m.t==='cr')sitios.push({la:m.la,lo:m.lo,r:.13,n:'Acceso a la cantera'});if(['L','HC','T'].includes(m.t))sitios.push({la:m.la,lo:m.lo,r:.09,n:'Acceso a la planta '+m.t})}
+  for(const s of sitios){
+    const[x,y]=P(s.la,s.lo);let best=null;
+    for(const r of CARRETERAS){if(r.t==='pista'||r.acceso)continue;const pen=r.t==='calle'?.03:0;
+      for(let i=1;i<r.k.length;i++){const a=r.k[i-1],b=r.k[i],dx=b[0]-a[0],dy=b[1]-a[1],L=dx*dx+dy*dy;let t=L?((x-a[0])*dx+(y-a[1])*dy)/L:0;t=Math.max(0,Math.min(1,t));
+        const px=a[0]+dx*t,py=a[1]+dy*t,d=Math.hypot(px-x,py-y)+pen;if(!best||d<best.d)best={d,p:[px,py]}}}
+    if(!best||best.d-0<s.r+.03||best.d>4)continue;                     // ya está pegada a una vía (o demasiado lejos)
+    const L=Math.hypot(best.p[0]-x,best.p[1]-y),ux=(best.p[0]-x)/L,uy=(best.p[1]-y)/L,fin=[x+ux*s.r*.6,y+uy*s.r*.6];
+    const mid=[(best.p[0]+fin[0])/2-uy*L*.06,(best.p[1]+fin[1])/2+ux*L*.06];   // una ligera curva
+    const k=[best.p,mid,fin];CARRETERAS.push({id:'',t:'sec',n:s.n,acceso:true,k,p:k.map(([a,b])=>INV(a,b))});
+  }
+}
+function generar(){
+  crearAccesos();
+  const N=TW*TH;
+  const L=makeMask(ISLAS,0), LS=makeMask(ISLAS,3), LM=makeMask(ISLAS,12), LB=makeMask(ISLAS,45);
+  LAND=L;
+  const MLAVA=makeMask([Z_LAVA],14), MCOR=makeMask([Z_CORONA],12), MGER=makeMask([Z_GERIA],12), MJAB=makeMask([Z_JABLE],18);
+  const E=new Float32Array(N), TR=new Float32Array(N), TO=new Float32Array(N), TN=new Float32Array(N), BEACH=new Float32Array(N), HAR=new Float32Array(N);
+
+  // Elevación base
+  for(let y=0;y<TH;y++)for(let x=0;x<TW;x++){const i=y*TW+x;if(!L[i])continue;const b=LB[i]/255;E[i]=b*(25+150*fbm(x*.006,y*.006,3))}
+
+  const forBox=(cx,cy,Rkm,fn)=>{const[px,py]=toPix(cx,cy),R=Rkm/RES;const xa=Math.max(1,Math.floor(px-R)),xb=Math.min(TW-2,Math.ceil(px+R)),ya=Math.max(1,Math.floor(py-R)),yb=Math.min(TH-2,Math.ceil(py+R));for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++){const i=y*TW+x;if(!L[i])continue;fn(i,(x-px)*RES,(y-py)*RES,x,y)}};
+
+  // Conos volcánicos
+  const conos=CONOS.slice();
+  const rv=rngOf(42);let tries=0;
+  while(!window.DEM&&conos.length<CONOS.length+16&&tries<500){tries++;const la=28.97+rv()*.13,lo=-13.83+rv()*.17;if(pip(P(la,lo),Z_LAVA))conos.push([la,lo,120+rv()*200,.45+rv()*.45,.3+rv()*.3,rv()<.6?'r':'n'])}
+  tries=0;let extra=0;
+  while(!window.DEM&&extra<14&&tries<500){tries++;const la=28.9+rv()*.25,lo=-13.72+rv()*.2;const k=P(la,lo);if(!pip(k,ISLAS[0])||pip(k,Z_LAVA))continue;let lejos=true;for(const t of PUEBLOS){const q=P(t[1],t[2]);if(Math.hypot(q[0]-k[0],q[1]-k[1])<1.4){lejos=false;break}}if(!lejos)continue;conos.push([la,lo,80+rv()*170,.4+rv()*.4,.25,rv()<.5?'r':'o']);extra++}
+  for(const[la,lo,h,r,cr,ti]of conos){
+    const[cx,cy]=P(la,lo);const T=ti==='r'?TR:ti==='o'?TO:TN;
+    forBox(cx,cy,r*1.25,(i,dx,dy,x,y)=>{const d=Math.hypot(dx,dy)/r;if(d>=1.2)return;
+      let v=h*Math.pow(Math.max(0,1-d/1.2),1.5);
+      const cd=d/Math.max(.05,cr*.55); if(cr&&cd<1)v-=h*cr*.45*(1-cd*cd);
+      v*=.9+.2*vnoise(x*.2,y*.2);
+      E[i]+=v; const w=Math.exp(-d*d*1.3); if(w>T[i])T[i]=w;});
+  }
+  // Risco de Famara (meseta con acantilado al NO)
+  {const[ax,ay]=P(29.125,-13.537),[bx,by]=P(29.238,-13.474);const ux=bx-ax,uy=by-ay,Lr=Math.hypot(ux,uy),dx0=ux/Lr,dy0=uy/Lr,nx=-dy0,ny=dx0;
+   const nnx=nx>0?nx:-nx, nny=nx>0?ny:-ny; // normal hacia el este (SE)
+   const[chx,chy]=P(29.116,-13.510);
+   forBox((ax+bx)/2,(ay+by)/2,Lr/2+5,(i,_dx,_dy,x,y)=>{const wx=X0+x*RES,wy=Y0+y*RES,rx=wx-ax,ry=wy-ay;const t=rx*dx0+ry*dy0,s=rx*nnx+ry*nny;if(t<-1.5||t>Lr+1)return;
+     const along=sstep(-1.5,1.5,t)*(1-sstep(Lr-1.2,Lr+1,t));
+     let h=430+120*Math.exp(-Math.pow((wx-chx)**2+(wy-chy)**2,1)/3.5);
+     let prof=s<1.0?1:Math.pow(Math.max(0,1-(s-1.0)/4.2),1.3);
+     const rid=1-Math.abs(2*fbm(x*.03,y*.03,3)-1);
+     let v=h*prof*along*(s>1?(.8+.25*rid):1);
+     E[i]=Math.max(E[i],v*.97+E[i]*.1);});
+   // valle de Haría
+   const[hx,hy]=P(29.143,-13.500);forBox(hx,hy,2.4,(i,dx,dy)=>{const d=Math.hypot(dx,dy*1.3);E[i]-=170*Math.exp(-d*d/1.6);HAR[i]=Math.max(HAR[i],Math.exp(-d*d/1.0))});
+  }
+  // Los Ajaches
+  {const[cx,cy]=P(28.889,-13.768);forBox(cx,cy,5,(i,dx,dy,x,y)=>{const q=(dx/3.4)**2+(dy/2.6)**2;if(q>2.5)return;const rid=1-Math.abs(2*fbm(x*.035,y*.035,4)-1);E[i]+=430*Math.exp(-q*1.4)*(.55+.6*rid);TO[i]=Math.max(TO[i],.35*Math.exp(-q))});
+   const[px,py]=P(28.905,-13.776);forBox(px,py,1.2,(i,dx,dy)=>{const d=Math.hypot(dx,dy);E[i]+=150*Math.exp(-d*d/.35)})}
+  // Relieve REAL (modelo digital de elevación): sustituye al relieve aproximado
+  if(window.DEM){
+    for(let y=0;y<TH;y++){const lat=LAT0-(Y0+y*RES)/KY;
+      for(let x=0;x<TW;x++){const i=y*TW+x;if(!L[i])continue;E[i]=Math.max(1,demAt(lat,LON0+(X0+x*RES)/KX))}}
+    // el valle de Haría ya viene en los datos reales; sólo se conserva su color verde
+  }
+  // Playas
+  for(const[la,lo,r]of PLAYAS){const[cx,cy]=P(la,lo);forBox(cx,cy,r,(i,dx,dy)=>{const d=Math.hypot(dx,dy)/r;if(d<1)BEACH[i]=Math.max(BEACH[i],1-d*d)})}
+
+  // ---- Color ----
+  const canvas=document.createElement('canvas');canvas.width=TW;canvas.height=TH;
+  const g=canvas.getContext('2d');const img=g.createImageData(TW,TH),D=img.data;
+  const canvas3=document.createElement('canvas');canvas3.width=TW;canvas3.height=TH;const g3=canvas3.getContext('2d');const img3=g3.createImageData(TW,TH),D3=img3.data;
+  // máscara de zonas para el 3D (R malpaís, G jable, B La Geria, A enarenados): el 3D les pone textura propia al acercarse
+  const DZ=new Uint8ClampedArray(TW*TH*4);
+  const DEEP=hex('#0a3a58'),MID=hex('#13668c'),SHAL=hex('#2c9db5'),FOAM=hex('#bfe6ea');
+  const EA=hex('#a87d55'),EB=hex('#c8a374'),SAND=hex('#e6d3a2'),BEA=hex('#f1e2b6'),LAVA=hex('#3a302c'),LAVB=hex('#5a4236'),
+        GER=hex('#47403b'),VIN=hex('#7b8a3e'),RED=hex('#9b4a2c'),RED2=hex('#b8603a'),OCR=hex('#c9a06a'),BLK=hex('#4a3f3a'),HARC=hex('#8e8a54'),PAL=hex('#4e6b2e'),ALT=hex('#8d7560');
+  const lx=-.55,ly=-.55,lz=.63, ex=4/(2*RES*1000);
+  const c=[0,0,0],o=[0,0,0];
+  for(let y=0;y<TH;y++){for(let x=0;x<TW;x++){
+    const i=y*TW+x,j=i*4,l=L[i]/255;
+    // mar
+    const b=LB[i]/255,m=LM[i]/255,sm=LS[i]/255,nz=vnoise(x*.05,y*.05);
+    o[0]=DEEP[0];o[1]=DEEP[1];o[2]=DEEP[2];
+    mix3(o,MID,Math.min(1,b*2.4+(nz-.5)*.15));mix3(o,SHAL,Math.min(1,m*2.6));mix3(o,FOAM,Math.min(.55,sm*1.6));
+    if(l<=0){DZ[j]=DZ[j+1]=DZ[j+2]=DZ[j+3]=0;D[j]=D3[j]=o[0];D[j+1]=D3[j+1]=o[1];D[j+2]=D3[j+2]=o[2];D[j+3]=D3[j+3]=255;continue}
+    // tierra
+    const n1=fbm(x*.012,y*.012,3),n2=vnoise(x*.3,y*.3),h=hash2(x,y);
+    c[0]=EA[0];c[1]=EA[1];c[2]=EA[2];mix3(c,EB,n1);
+    const e=E[i];
+    if(e>300)mix3(c,ALT,Math.min(.5,(e-300)/600));
+    const wJ=sstep(.35,.7,MJAB[i]/255+(n1-.5)*.6); if(wJ>0)mix3(c,SAND,wJ*(.5+.25*n2));
+    const wH=HAR[i]; let punto=null; if(wH>0.05){mix3(c,HARC,wH*.7); if(h<.16*wH)punto=PAL}
+    if(TO[i]>0)mix3(c,OCR,TO[i]*.7);
+    if(TR[i]>0)mix3(c,n2>.5?RED2:RED,TR[i]*.85);
+    const wL=Math.max(sstep(.3,.65,MLAVA[i]/255+(n1-.5)*.7),sstep(.3,.65,MCOR[i]/255+(n1-.5)*.7));
+    if(wL>0){const lv=[LAVA[0],LAVA[1],LAVA[2]];mix3(lv,LAVB,n2*.6);mix3(c,lv,wL*.92); if(TR[i]>0)mix3(c,RED,TR[i]*.6*wL); if(TN[i]>0)mix3(c,BLK,TN[i]*.6)}
+    const wG=sstep(.35,.65,MGER[i]/255+(n1-.5)*.5); if(wG>0){mix3(c,GER,wG*.9); if(h<.13*wG)punto=VIN}
+    const coast=clamp((255-LM[i])/110,0,1); if(BEACH[i]>0)mix3(c,BEA,Math.min(1,BEACH[i]*coast*2));
+    // enarenados: parcelas de picón negro de la agricultura tradicional en las llanuras del interior
+    const wE=(1-Math.max(wL,wJ,wG))*(1-wH)*sstep(.5,.62,fbm(x*.02+7,y*.02+3,3))*sstep(60,120,e)*(1-sstep(380,460,e))*(LM[i]>=250?1:0)*(1-TR[i])*(1-TO[i]*.8);
+    if(wE>0)mix3(c,GER,wE*.55);
+    DZ[j]=255*wL;DZ[j+1]=255*wJ;DZ[j+2]=255*wG;DZ[j+3]=255*wE;
+    // color sin sombrear (para el 3D, donde la sombra la pone el sol)
+    {const v=.94+.12*n2;D3[j]=c[0]*v*l+o[0]*(1-l);D3[j+1]=c[1]*v*l+o[1]*(1-l);D3[j+2]=c[2]*v*l+o[2]*(1-l);D3[j+3]=255}
+    if(punto)mix3(c,punto,.88);   // puntitos de viña/palmera: solo en el mapa 2D (en 3D hay modelos)
+    // sombreado
+    const gx=E[i+1]-E[i-1],gy=E[i+TW]-E[i-TW];const nx=-gx*ex,ny=-gy*ex,len=Math.sqrt(nx*nx+ny*ny+1);
+    let s=(nx*lx+ny*ly+lz)/len/lz; s=clamp(.62+.38*s+ (s-1)*.25,.35,1.35);
+    s*=.94+.12*n2;
+    c[0]*=s;c[1]*=s;c[2]*=s;
+    // costa suavizada
+    D[j]=c[0]*l+o[0]*(1-l);D[j+1]=c[1]*l+o[1]*(1-l);D[j+2]=c[2]*l+o[2]*(1-l);D[j+3]=255;
+  }}
+  g.putImageData(img,0,0);g3.putImageData(img3,0,0);window.ZONAS3D={data:new Uint8Array(DZ.buffer),w:TW,h:TH};
+
+  for(const G of[g,g3]){
+  // Salinas de Janubio
+  {const[lx_,ly_]=toPix(...P(28.9375,-13.8255));G.fillStyle='#3d8f9c';G.beginPath();G.ellipse(lx_,ly_,10,8,0,0,7);G.fill();
+   for(let a=0;a<6;a++)for(let b=0;b<5;b++){G.fillStyle=(a+b)%2?'#efe3e6':'#d9c7cc';G.fillRect(lx_+11+a*2.2,ly_-6+b*2.4,2,2.1)}}
+  // Charco de los Clicos
+  {const[a,b]=toPix(...P(28.9765,-13.8335));G.fillStyle='#5f8f2a';G.beginPath();G.arc(a,b,1.6,0,7);G.fill()}
+  }
+  window.ELEV=E;window.COLOR3D=canvas3;
+
+  // Edificios
+  generarEdificios();
+  // en 3D: suelo urbano (calles y patios) bajo los edificios
+  g3.fillStyle='rgba(150,144,134,.55)';for(const b of EDIFICIOS){const[px,py]=toPix(b.x,b.y);const w=b.w/RES*1.9+.6,hh=b.h/RES*1.9+.6;g3.fillRect(px-w/2,py-hh/2,w,hh)}
+  for(const b of EDIFICIOS){g.fillStyle=b.pool?'rgba(240,240,236,.95)':'rgba(238,234,226,.85)';const[px,py]=toPix(b.x,b.y);const w=Math.max(.6,b.w/RES),hh=Math.max(.6,b.h/RES);g.fillRect(px-w/2,py-hh/2,w,hh)}
+  // aeropuerto (pista)
+  {const[a,b]=toPix(...P(28.938,-13.613)),[c2,d2]=toPix(...P(28.957,-13.598));g.strokeStyle='#5b5b5b';g.lineWidth=2;g.beginPath();g.moveTo(a,b);g.lineTo(c2,d2);g.stroke();g.fillStyle='rgba(120,120,120,.6)';g.fillRect((a+c2)/2+3,(b+d2)/2-6,10,8)}
+  return canvas;
+}
+
+function puebloDe(x,y){
+  for(const t of PUEBLOS){const[cx,cy]=P(t[1],t[2]),a=t[7]*Math.PI/180,dx=x-cx,dy=y-cy;
+    const u=(dx*Math.cos(a)+dy*Math.sin(a))/(t[5]*1.25+.1),v=(-dx*Math.sin(a)+dy*Math.cos(a))/(t[6]*1.25+.1);if(u*u+v*v<1)return t}
+  return null;
+}
+// Casas a lo largo de las calles reales (OSM): una fila a cada lado, con solares vacíos y hoteles en zonas turísticas
+function generarEdificiosOSM(){
+  const rng=rngOf(2024),occ=new Set(),C=.012,key=(x,y)=>Math.round(x/C)+','+Math.round(y/C);
+  for(const r of CARRETERAS){if(r.t==='pista')continue;for(let i=1;i<r.k.length;i++){const a=r.k[i-1],b=r.k[i],L=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.ceil(L/.006);
+    for(let s=0;s<=n;s++)occ.add(key(a[0]+(b[0]-a[0])*s/n,a[1]+(b[1]-a[1])*s/n))}}
+  for(const r of CARRETERAS){
+    const calle=r.t==='calle';if(!calle&&r.t!=='sec'&&r.t!=='prin')continue;
+    for(let i=1;i<r.k.length;i++){
+      const a=r.k[i-1],b=r.k[i],L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L<.004)continue;
+      const dx=(b[0]-a[0])/L,dy=(b[1]-a[1])/L,ang=Math.atan2(dy,dx);
+      for(let s=.008;s<L;s+=.019){
+        const x=a[0]+dx*s,y=a[1]+dy*s,t=puebloDe(x,y);if(!calle&&!t)continue;
+        const turis=t&&t[3]==='turis';
+        for(const lado of[-1,1]){
+          if(rng()<.14)continue;                                  // solares vacíos
+          const hotel=turis&&rng()<.12,off=hotel?.032:.0125+rng()*.003,X=x-dy*off*lado,Y=y+dx*off*lado;
+          const k=key(X,Y);if(occ.has(k))continue;
+          const[px,py]=toPix(X,Y);if(!(LAND[Math.round(py)*TW+Math.round(px)]>=230))continue;
+          occ.add(k);if(hotel)for(let u=-2;u<=2;u++)for(let v=-2;v<=2;v++)occ.add((Math.round(X/C)+u)+','+(Math.round(Y/C)+v));
+          const w=hotel?.036+rng()*.02:.010+rng()*.006,h=hotel?.02+rng()*.012:.009+rng()*.005,ca=Math.cos(ang),sa=Math.sin(ang);
+          const bld={x:X,y:Y,w,h,a:ang,pool:hotel,c:rng()};
+          bld.k=[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]].map(([u2,v2])=>[X+u2*ca-v2*sa,Y+u2*sa+v2*ca]);
+          EDIFICIOS.push(bld);const ck=Math.floor(X/CELDA)+'|'+Math.floor(Y/CELDA);if(!CELDAS.has(ck))CELDAS.set(ck,[]);CELDAS.get(ck).push(bld);
+          if(EDIFICIOS.length>=65000)return;
+        }
+      }
+    }
+  }
+}
+function generarEdificios(){
+  if(REAL)return generarEdificiosOSM();
+  const rng=rngOf(2024);
+  for(const[nom,la,lo,tipo,,rx,ry,rot]of PUEBLOS){
+    const[cx,cy]=P(la,lo);const ang=rot*Math.PI/180,ca=Math.cos(ang),sa=Math.sin(ang);
+    const area=Math.PI*rx*ry;const dens=tipo==='capital'?420:tipo==='turis'?300:tipo==='aldea'?160:260;
+    const total=Math.max(12,Math.round(area*dens)),cell=tipo==='turis'?.05:.035;
+    const used=new Set();const ga=ang+(rng()-.5)*.3,gc=Math.cos(ga),gs=Math.sin(ga);
+    for(let k=0;k<total*2.2&&used.size<total;k++){
+      const u=Math.sqrt(rng()),t=rng()*Math.PI*2;
+      if(rng()>1.15-u*.9)continue; // más denso en el centro
+      const ex_=Math.cos(t)*rx*u,ey_=Math.sin(t)*ry*u;
+      const wx=cx+ex_*ca-ey_*sa,wy=cy+ex_*sa+ey_*ca;
+      // rejilla de calles
+      const lx=(wx-cx)*gc+(wy-cy)*gs,ly=-(wx-cx)*gs+(wy-cy)*gc;
+      const ix=Math.round(lx/cell),iy=Math.round(ly/cell);
+      if(ix%4===0||iy%3===0)continue;
+      const key=ix+','+iy;if(used.has(key))continue;used.add(key);
+      const bx=ix*cell,by=iy*cell;const X=cx+bx*gc-by*gs,Y=cy+bx*gs+by*gc;
+      const[px,py]=toPix(X,Y);const li=Math.round(py)*TW+Math.round(px);if(!LAND[li]||LAND[li]<230)continue;
+      const hotel=tipo==='turis'&&rng()<.22;
+      const w=cell*(hotel?1.3+rng()*.5:.5+rng()*.38),h=cell*(hotel?.9+rng()*.4:.5+rng()*.38);
+      const b={x:X,y:Y,w,h,a:ga,pool:hotel,c:rng()};
+      // esquinas
+      const ccs=Math.cos(ga),ssn=Math.sin(ga);b.k=[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]].map(([u2,v2])=>[X+u2*ccs-v2*ssn,Y+u2*ssn+v2*ccs]);
+      EDIFICIOS.push(b);
+      const ck=Math.floor(X/CELDA)+'|'+Math.floor(Y/CELDA);if(!CELDAS.has(ck))CELDAS.set(ck,[]);CELDAS.get(ck).push(b);
+    }
+  }
+}
+
+/* =======================================================================
+   RENDER
+   ======================================================================= */
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1,TERRENO=null;
+const vista={cx:0,cy:0,s:16};
+let minS=8,maxS=1500,sucio=true;
+const capas={nom:true,car:true,edi:true,poi:true};
+
+function redim(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';sucio=true}
+function encuadre(){const[ax,ay]=P(29.30,-13.880),[bx,by]=P(28.835,-13.410);const s=Math.min(W/(bx-ax),(H-80)/(by-ay))*.95;vista.s=s;minS=s*.6;vista.cx=(ax+bx)/2;vista.cy=(ay+by)/2+ 20/s;
+  if(W>900){const s2=Math.min((W-360)/(bx-ax),(H-120)/(by-ay))*.95;vista.s=s2;minS=s2*.6;vista.cx=(ax+bx)/2+172/s2;vista.cy=(ay+by)/2-20/s2}
+  else if(document.getElementById('jPanel')){vista.cy=(ay+by)/2+H*.2/s}
+  sucio=true}
+const SX=x=>(x-vista.cx)*vista.s+W/2, SY=y=>(y-vista.cy)*vista.s+H/2+27;
+const WX=sx=>(sx-W/2)/vista.s+vista.cx, WY=sy=>(sy-H/2-27)/vista.s+vista.cy;
+
+function camino(pts){ctx.beginPath();const q=pts.map(([x,y])=>[SX(x),SY(y)]);ctx.moveTo(q[0][0],q[0][1]);for(let i=1;i<q.length-1;i++){ctx.quadraticCurveTo(q[i][0],q[i][1],(q[i][0]+q[i+1][0])/2,(q[i][1]+q[i+1][1])/2)}const z=q[q.length-1];ctx.lineTo(z[0],z[1]);}
+
+const ESTILO={calle:{w:.007,min:.8,f:'#f4efe6',c:'#8a8276'},auto:{w:.024,min:3.4,f:'#f39c34',c:'#7d4510'},prin:{w:.014,min:2.6,f:'#ffd866',c:'#6e5a1c'},sec:{w:.009,min:1.6,f:'#fbf8f0',c:'#5e5850'},pista:{w:.006,min:1.3,f:'#e8d7b0',c:null}};
+
+let ETIQ=[],HIT=[];
+function libre(x,y,w,h){for(const r of ETIQ)if(x<r[0]+r[2]&&x+w>r[0]&&y<r[1]+r[3]&&y+h>r[1])return false;ETIQ.push([x,y,w,h]);return true}
+function texto(t,x,y,font,fill,halo,align='center'){ctx.font=font;const w=ctx.measureText(t).width,hh=parseInt(font.match(/(\d+)px/)[1]);const bx=align==='center'?x-w/2:align==='left'?x:x-w;if(!libre(bx-2,y-hh,w+4,hh+4))return false;ctx.textAlign=align;ctx.textBaseline='alphabetic';ctx.lineJoin='round';if(halo){ctx.strokeStyle=halo;ctx.lineWidth=3.5;ctx.strokeText(t,x,y)}ctx.fillStyle=fill;ctx.fillText(t,x,y);return true}
+
+function dibujar(){
+  if(!sucio)return;sucio=false;
+  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='#0a3a58';ctx.fillRect(0,0,W,H);
+  if(!TERRENO)return;
+  const s=vista.s;ETIQ=[];HIT=[];
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.drawImage(TERRENO,SX(X0),SY(Y0),TW*RES*s,TH*RES*s);
+
+  // Parque Nacional
+  if(s>14){ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='rgba(120,200,110,.75)';ctx.lineWidth=1.4;camino(Z_PARQUE.concat([Z_PARQUE[0]]));ctx.stroke();ctx.restore()}
+
+  // Rutas marítimas
+  ctx.save();ctx.setLineDash([3,5]);ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.5;for(const r of RUTAS_MAR){camino(r.k);ctx.stroke()}ctx.restore();
+
+  // Aeropuerto vectorial
+  if(s>40){const a=P(28.938,-13.613),b=P(28.957,-13.598);ctx.strokeStyle='#4a4a4a';ctx.lineWidth=Math.max(3,.045*s);ctx.beginPath();ctx.moveTo(SX(a[0]),SY(a[1]));ctx.lineTo(SX(b[0]),SY(b[1]));ctx.stroke();
+    if(s>150){ctx.strokeStyle='#fff';ctx.setLineDash([.03*s,.03*s]);ctx.lineWidth=Math.max(1,.002*s);ctx.stroke();ctx.setLineDash([])}}
+
+  // Edificios
+  if(capas.edi&&s>=70){
+    const x0=Math.floor(WX(0)/CELDA),x1=Math.floor(WX(W)/CELDA),y0=Math.floor(WY(0)/CELDA),y1=Math.floor(WY(H)/CELDA);
+    const vis=[];for(let gx=x0;gx<=x1;gx++)for(let gy=y0;gy<=y1;gy++){const a=CELDAS.get(gx+'|'+gy);if(a)vis.push(...a)}
+    const sh=Math.min(4,.006*s);
+    // se rellena en tandas: un único trazo con miles de polígonos es lentísimo
+    const tanda=(color,filtro,dx)=>{ctx.fillStyle=color;let n=0;ctx.beginPath();
+      for(const b of vis){if(!filtro(b))continue;const k=b.k;ctx.moveTo(SX(k[0][0])+dx,SY(k[0][1])+dx);ctx.lineTo(SX(k[1][0])+dx,SY(k[1][1])+dx);ctx.lineTo(SX(k[2][0])+dx,SY(k[2][1])+dx);ctx.lineTo(SX(k[3][0])+dx,SY(k[3][1])+dx);ctx.closePath();
+        if(++n%400===0){ctx.fill();ctx.beginPath()}}ctx.fill()};
+    const enVista=b=>{const X=SX(b.x),Y=SY(b.y);return X>-30&&Y>-30&&X<W+30&&Y<H+30};
+    const vis2=vis.filter(enVista);vis.length=0;vis.push(...vis2);
+    if(s<220){   // de lejos: cuadraditos (mucho más rápido); de cerca: planta girada con sombra
+      ctx.fillStyle='rgba(30,20,10,.25)';for(const b of vis){const w=Math.max(1,b.w*s),h=Math.max(1,b.h*s);ctx.fillRect(SX(b.x)-w/2+sh,SY(b.y)-h/2+sh,w,h)}
+      for(const b of vis){const w=Math.max(1,b.w*s),h=Math.max(1,b.h*s);ctx.fillStyle=b.c<.8?'#f6f3ec':'#e9e1d0';ctx.fillRect(SX(b.x)-w/2,SY(b.y)-h/2,w,h)}
+    } else {tanda('rgba(30,20,10,.28)',()=>true,sh);tanda('#f6f3ec',b=>b.c<.8,0);tanda('#e9e1d0',b=>b.c>=.8,0)}
+    if(s>160){ctx.fillStyle='#3fb6d6';for(const b of vis)if(b.pool){const r=Math.min(b.w,b.h)*.28*s;ctx.fillRect(SX(b.x)-r,SY(b.y)+b.h*.22*s,r*2,r*.9)}
+      if(s>=220){ctx.strokeStyle='rgba(0,0,0,.12)';ctx.lineWidth=1;let n=0;ctx.beginPath();for(const b of vis){b.k.forEach(([x,y],i)=>i?ctx.lineTo(SX(x),SY(y)):ctx.moveTo(SX(x),SY(y)));ctx.closePath();if(++n%400===0){ctx.stroke();ctx.beginPath()}}ctx.stroke()}}
+  }
+
+  // Carreteras
+  if(capas.car){
+    const orden=s>28?['calle','pista','sec','prin','auto']:['pista','sec','prin','auto'];
+    const vx0=WX(-20),vx1=WX(W+20),vy0=WY(-20),vy1=WY(H+20);
+    for(const fase of['c','f'])for(const t of orden){const e=ESTILO[t];
+      const w=Math.max(e.min*(s<20?.75:1),e.w*s);
+      for(const r of CARRETERAS){if(r.t!==t)continue;
+        if(!r.bb){let a=1e9,b=-1e9,c=1e9,d=-1e9;for(const[x,y]of r.k){a=Math.min(a,x);b=Math.max(b,x);c=Math.min(c,y);d=Math.max(d,y)}r.bb=[a,b,c,d]}
+        if(r.bb[1]<vx0||r.bb[0]>vx1||r.bb[3]<vy0||r.bb[2]>vy1)continue;
+        camino(r.k);
+        if(t==='pista'){if(fase==='f'){ctx.setLineDash([5,4]);ctx.strokeStyle=e.f;ctx.lineWidth=w;ctx.stroke();ctx.setLineDash([])}continue}
+        ctx.lineCap='round';ctx.lineJoin='round';
+        if(fase==='c'){ctx.strokeStyle=e.c;ctx.lineWidth=w+2;ctx.stroke()}else{ctx.strokeStyle=e.f;ctx.lineWidth=w;ctx.stroke()}}}
+  }
+  // (los escudos LZ se dibujan después de los nombres de pueblos)
+  function escudos(){
+    if(capas.car&&s>13){const vistos=new Set();for(const r of CARRETERAS){if(!r.id)continue;if(vistos.has(r.id)&&s<45)continue;vistos.add(r.id);
+      const m=r.k[Math.floor(r.k.length/2)];const x=SX(m[0]),y=SY(m[1]);ctx.font='bold 10.5px system-ui,sans-serif';const tw=ctx.measureText(r.id).width+8;
+      if(!libre(x-tw/2,y-8,tw,16))continue;ctx.fillStyle=r.t==='auto'?'#1f6f3d':'#fff';ctx.strokeStyle=r.t==='auto'?'#fff':'#333';ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.roundRect(x-tw/2,y-8,tw,16,3);ctx.fill();ctx.stroke();ctx.fillStyle=r.t==='auto'?'#fff':'#222';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(r.id,x,y+.5)}}
+  }
+
+  // Planta HORINSA a detalle
+  if(s>250)dibujarPlanta();
+  // Capas del juego (obras, camiones…)
+  for(const f of GANCHOS_DIBUJO)f(s);
+
+  // Hueco de la cantera (terrazas) a partir de cierto zoom
+  if(s>30){const[x,y]=P(HORINSA.cantera.la,HORINSA.cantera.lo);for(let k=4;k>0;k--){ctx.fillStyle=k%2?'#d8c3a0':'#bfa47c';ctx.beginPath();ctx.ellipse(SX(x),SY(y),k*.07*s,k*.05*s,.4,0,7);ctx.fill()}}
+  // Iconos: HORINSA primero (prioridad en etiquetas)
+  icono(HORINSA.planta,'planta');icono(HORINSA.cantera,'cantera');
+  for(const m of MARCAS)if(!TIPOS_M[m.t].unico)icono(m,'marca');
+  if(capas.poi)for(const l of LUGARES){if(l.t==='poi'&&s<26)continue;if(l.t==='puerto'&&s<18&&!/Arrecife|Playa Blanca|Órzola|Sebo/.test(l.n))continue;icono(l,l.t)}
+
+  // Nombres
+  if(capas.nom){
+    // pueblos
+    const nivel={capital:0,muni:0,turis:12,pueblo:22,aldea:42};
+    const ord=PUEBLOS.slice().sort((a,b)=>nivel[a[3]]-nivel[b[3]]);
+    for(const t of ord){if(s<nivel[t[3]])continue;const[x,y]=P(t[1],t[2]);const X=SX(x),Y=SY(y);
+      const big=t[3]==='capital'?16:t[3]==='muni'?13.5:t[3]==='turis'?12.5:t[3]==='pueblo'?12:11;
+      const font=(t[3]==='capital'||t[3]==='muni'?'bold ':'600 ')+big+'px system-ui,sans-serif';
+      if(s<70){ctx.fillStyle=t[3]==='capital'?'#c0392b':'#333';ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(X,Y,t[3]==='capital'?4.5:t[3]==='muni'?3.6:2.6,0,7);ctx.fill();ctx.stroke()}
+      if(texto(t[0],X,Y-(s<70?7:0),font,'#1d1a17','rgba(255,255,255,.88)'))HIT.push({x:X,y:Y,r:12,o:{tipo:'pueblo',d:t}})}
+    escudos();
+    // montes
+    if(s>20)for(const[n,la,lo,h]of MONTES){if(s<34&&h<450)continue;const[x,y]=P(la,lo);const X=SX(x),Y=SY(y);
+      ctx.fillStyle='#5a2d1a';ctx.beginPath();ctx.moveTo(X,Y-5);ctx.lineTo(X+4.5,Y+3);ctx.lineTo(X-4.5,Y+3);ctx.closePath();ctx.fill();
+      if(texto(n+' · '+h+' m',X+7,Y+4,'italic 600 10.5px system-ui,sans-serif','#4a2414','rgba(255,240,225,.8)','left'))HIT.push({x:X,y:Y,r:9,o:{tipo:'monte',d:[n,la,lo,h]}})}
+    // zonas
+    if(s>16&&s<160)for(const[n,la,lo,f]of ZONAS_TXT){const[x,y]=P(la,lo);texto(n.toUpperCase(),SX(x),SY(y),`italic 600 ${f}px Georgia,serif`,'rgba(255,248,235,.92)','rgba(40,25,15,.55)')}
+    for(const[n,la,lo,f]of MAR_TXT){const[x,y]=P(la,lo);texto(n,SX(x),SY(y),`italic ${f}px Georgia,serif`,'rgba(200,232,245,.85)',null)}
+    {const[x,y]=P(28.800,-13.872);texto('↓ Fuerteventura',SX(x),SY(y)+14,'italic 12px Georgia,serif','rgba(200,232,245,.85)',null);
+     const[a,b]=P(29.330,-13.500);texto('↑ Alegranza',SX(a),SY(b),'italic 12px Georgia,serif','rgba(200,232,245,.85)',null)}
+  } else escudos();
+  actualizarEscala();
+}
+
+function icono(l,t){
+  const[x,y]=P(l.la,l.lo);const X=SX(x),Y=SY(y);if(X<-30||Y<-30||X>W+30||Y>H+30)return;
+  if(t==='planta'){const z=vista.s>250?0:1;if(z){ctx.fillStyle='#d2201f';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(X-11,Y-11,22,22,3);ctx.fill();ctx.stroke();ctx.fillStyle='#fff';ctx.font='900 17px "Arial Black",Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('H',X,Y+1)}
+    libre(X-12,Y-12,24,24);texto('HORINSA',X,Y+(z?26:-(45*vista.s/1000)-8),'800 12px system-ui,sans-serif','#d2201f','#fff');HIT.push({x:X,y:Y,r:16,o:{tipo:'planta'}});return}
+  if(t==='cantera'){ctx.fillStyle='#6b4a2a';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(X,Y,10,0,7);ctx.fill();ctx.stroke();ctx.fillStyle='#fff';ctx.font='12px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('⛏',X,Y+1);
+    libre(X-11,Y-11,22,22);texto('Cantera',X,Y+24,'700 11.5px system-ui,sans-serif','#4b2f15','#fff');HIT.push({x:X,y:Y,r:14,o:{tipo:'cantera'}});return}
+  if(t==='marca'){const T=TIPOS_M[l.t];ctx.font='800 11px system-ui,sans-serif';const w=Math.max(20,ctx.measureText(T.txt).width+8);
+    ctx.fillStyle=T.col;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(X-w/2,Y-10,w,20,4);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(T.txt,X,Y+.5);libre(X-w/2-1,Y-11,w+2,22);
+    if(vista.s>22)texto(l.nota||T.corto,X,Y+24,'700 11px system-ui,sans-serif',T.col,'rgba(255,255,255,.9)');
+    HIT.push({x:X,y:Y,r:13,o:{tipo:'marca',d:l}});return}
+  const col=t==='puerto'?'#1c4f8a':t==='aero'?'#444':'#2f7d4a',g=t==='puerto'?'⚓':t==='aero'?'✈':'★';
+  ctx.fillStyle=col;ctx.strokeStyle='#fff';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(X,Y,8,0,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(g,X,Y+.5);libre(X-9,Y-9,18,18);
+  if(vista.s>45)texto(l.n,X+11,Y+4,'600 10.5px system-ui,sans-serif',col,'rgba(255,255,255,.85)','left');
+  HIT.push({x:X,y:Y,r:11,o:{tipo:t,d:l}});
+}
+
+function dibujarPlanta(){
+  // Planta pequeña de inicio: 1 línea con 3 tolvas de áridos, silo de cemento, amasadora y acopios
+  const[x,y]=P(HORINSA.planta.la,HORINSA.planta.lo);const s=vista.s/1000;// px por metro
+  const R=(dx,dy,w,h,f,st)=>{ctx.fillStyle=f;ctx.fillRect(SX(x)+dx*s,SY(y)+dy*s,w*s,h*s);if(st){ctx.strokeStyle=st;ctx.lineWidth=1;ctx.strokeRect(SX(x)+dx*s,SY(y)+dy*s,w*s,h*s)}};
+  const C=(dx,dy,r,f)=>{ctx.fillStyle=f;ctx.beginPath();ctx.arc(SX(x)+dx*s,SY(y)+dy*s,r*s,0,7);ctx.fill()};
+  R(-70,-45,140,90,'#b9b4aa','#ffffff');               // parcela
+  const st=window.STOCK_PLANTA||{acopio:.6,silo:.6};const ka=.45+.75*st.acopio;
+  C(-45,-25,12*ka,'#cfc4b0');C(-45,8,12*ka,'#8f8a84');C(-45,32,8*ka,'#d9cdb6'); // acopios (arena, grava, gravilla)
+  for(let k=0;k<HORINSA.planta.tolvas;k++)R(-20+k*12,-30,9,9,'#7d5a3a','#3a2a1a'); // tolvas
+  R(-20+HORINSA.planta.tolvas*12,-26,25,3,'#555');      // cinta
+  C(30,-28,6,'#e8e8e8');                               // silo
+  R(24,-14,14,12,'#d2201f','#7a0f0f');                 // amasadora
+  R(40,10,26,24,'#f2f2f2','#888');                     // oficina
+  ctx.fillStyle='#d2201f';ctx.font=`900 ${Math.max(8,14*s)}px "Arial Black",Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('H',SX(x)+53*s,SY(y)+22*s);
+}
+
+function actualizarEscala(){const objetivo=110/vista.s;const p=Math.pow(10,Math.floor(Math.log10(objetivo)));const n=[1,2,5,10].map(k=>k*p).filter(v=>v<=objetivo).pop()||p;
+  document.getElementById('escBar').style.width=(n*vista.s)+'px';document.getElementById('escTxt').textContent=n>=1?n+' km':Math.round(n*1000)+' m'}
+
+/* ----------------------------- Interacción ----------------------------- */
+function zoomEn(f,sx,sy){const ns=clamp(vista.s*f,minS,maxS);const wx=WX(sx),wy=WY(sy);vista.s=ns;vista.cx=wx-(sx-W/2)/ns;vista.cy=wy-(sy-H/2-27)/ns;sucio=true}
+cv.addEventListener('wheel',e=>{e.preventDefault();zoomEn(Math.exp(-e.deltaY*.0015),e.clientX,e.clientY)},{passive:false});
+const ptrs=new Map();let arrastre=null,pinch=null,movido=0;
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});movido=0;
+  if(ptrs.size===1){arrastre={x:e.clientX,y:e.clientY,cx:vista.cx,cy:vista.cy};cv.classList.add('drag')}
+  if(ptrs.size===2){const[a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),s:vista.s};arrastre=null}});
+cv.addEventListener('pointermove',e=>{
+  const [la,lo]=INV(WX(e.clientX),WY(e.clientY));document.getElementById('coord').textContent=`${la.toFixed(4)}° N · ${Math.abs(lo).toFixed(4)}° O`;
+  if(!ptrs.has(e.pointerId)){cv.style.cursor=modoMarcar?'crosshair':hit(e.clientX,e.clientY)?'pointer':'grab';return}
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch&&ptrs.size===2){const[a,b]=[...ptrs.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);zoomEn(pinch.s*d/pinch.d/vista.s,(a.x+b.x)/2,(a.y+b.y)/2);movido+=5;return}
+  if(arrastre){const dx=e.clientX-arrastre.x,dy=e.clientY-arrastre.y;movido=Math.max(movido,Math.abs(dx)+Math.abs(dy));vista.cx=arrastre.cx-dx/vista.s;vista.cy=arrastre.cy-dy/vista.s;sucio=true}});
+const fin=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(ptrs.size===0){arrastre=null;cv.classList.remove('drag');if(movido<5&&e.type==='pointerup')click(e.clientX,e.clientY,e)}};
+cv.addEventListener('pointerup',fin);cv.addEventListener('pointercancel',fin);
+cv.addEventListener('dblclick',e=>zoomEn(2,e.clientX,e.clientY));
+function hit(x,y){let best=null,bd=1e9;for(const h of HIT){const d=Math.hypot(h.x-x,h.y-y);if(d<h.r&&d<bd){bd=d;best=h}}return best}
+function click(x,y,e){if(modoMarcar){colocar(x,y);return}const h=hit(x,y);
+  if(h&&h.o.tipo==='j-camion'&&e&&(e.shiftKey||e.ctrlKey||window.MODO_SEL)&&window.selCamion){window.selCamion(h.o.d.id);return}
+  if(h)ficha(h.o);else document.getElementById('ficha').style.display='none'}
+addEventListener('keydown',e=>{if(e.key==='+'||e.key==='=')zoomEn(1.4,W/2,H/2);if(e.key==='-')zoomEn(1/1.4,W/2,H/2);const k=80/vista.s;if(e.key==='ArrowLeft')vista.cx-=k;if(e.key==='ArrowRight')vista.cx+=k;if(e.key==='ArrowUp')vista.cy-=k;if(e.key==='ArrowDown')vista.cy+=k;if(e.key==='Escape')document.getElementById('ficha').style.display='none';sucio=true});
+document.getElementById('zin').onclick=()=>zoomEn(1.6,W/2,H/2);
+document.getElementById('zout').onclick=()=>zoomEn(1/1.6,W/2,H/2);
+document.getElementById('zhome').onclick=encuadre;
+document.getElementById('fCerrar').onclick=()=>document.getElementById('ficha').style.display='none';
+for(const[id,k]of[['cNom','nom'],['cCar','car'],['cEdi','edi'],['cPoi','poi']])document.getElementById(id).onchange=e=>{capas[k]=e.target.checked;sucio=true};
+
+function ficha(o){
+  const F=document.getElementById('ficha'),T=document.getElementById('fTipo'),N=document.getElementById('fNom'),B=document.getElementById('fCuerpo');
+  window.__fichaO=o;
+  if(o.tipo==='planta'&&window.juegoFicha&&typeof R!=='undefined'&&R)o={tipo:'j-planta'};
+  if(o.tipo.startsWith('j-')&&window.juegoFicha){window.__fichaO=o;const r=juegoFicha(o);if(T.textContent!==r[0])T.textContent=r[0];if(N.textContent!==r[1])N.textContent=r[1];if(window.__fichaH!==r[2]){window.__fichaH=r[2];B.innerHTML=r[2]}F.style.display='block';return}
+  window.__fichaH=null;
+  const tipos={capital:'Capital insular',muni:'Capital municipal',turis:'Núcleo turístico',pueblo:'Pueblo',aldea:'Pueblo pequeño'};
+  if(o.tipo==='pueblo'){const t=o.d;T.textContent=tipos[t[3]];N.textContent=t[0];B.innerHTML=`<p>Municipio: <b>${t[4]}</b></p><p style="color:#9aa6b2">${t[1].toFixed(4)}° N · ${Math.abs(t[2]).toFixed(4)}° O</p>`}
+  else if(o.tipo==='monte'){const[n,la,lo,h]=o.d;T.textContent='Montaña';N.textContent=n;B.innerHTML=`<p>Altitud: <b>${h} m</b></p>`}
+  else if(o.tipo==='planta'){const p=HORINSA.planta;T.textContent='Tu planta · ubicación provisional';N.textContent=p.n;
+    B.innerHTML=`<p><b>${p.lineas}</b> línea de producción con <b>${p.tolvas}</b> tolvas de áridos (mínimo 3, máximo 5 por línea; más tolvas = más rápido).</p><p>Para moverla: «📍 Marcar en el mapa» → HORINSA · Planta → clic en su sitio.</p>`}
+  else if(o.tipo==='marca'){const m=o.d,T2=TIPOS_M[m.t];T.textContent='Marcado por ti';N.textContent=T2.n.replace(/ \(.*\)/,'');
+    B.innerHTML=`${m.nota?`<p>${m.nota.replace(/</g,'&lt;')}</p>`:''}<p style="color:#9aa6b2">${m.la.toFixed(5)}° N · ${Math.abs(m.lo).toFixed(5)}° O</p>`}
+  else if(o.tipo==='cantera'){T.textContent='Cantera · ubicación provisional';N.textContent=HORINSA.cantera.n;
+    const a=P(HORINSA.planta.la,HORINSA.planta.lo),b=P(HORINSA.cantera.la,HORINSA.cantera.lo);
+    B.innerHTML=`<p>Separada de la planta: los áridos tienen que viajar en camión.</p><p>Distancia en línea recta a la planta: <b>${Math.hypot(a[0]-b[0],a[1]-b[1]).toFixed(1)} km</b>.</p>`}
+  else{const l=o.d;T.textContent=o.tipo==='puerto'?'Puerto':o.tipo==='aero'?'Aeropuerto':'Lugar';N.textContent=l.n;B.innerHTML=`<p>${l.d}</p>`}
+  F.style.display='block';
+}
+
+/* ------------------------- Marcar en el mapa ------------------------- */
+const TIPOS_M={
+ hp:{n:'HORINSA · Planta',corto:'HORINSA',unico:true,col:'#d2201f',txt:'H'},
+ hc:{n:'HORINSA · Cantera',corto:'Cantera',unico:true,col:'#6b4a2a',txt:'⛏'},
+ L:{n:'Planta de L',corto:'L',col:'#1f5fbf',txt:'L'},
+ HC:{n:'Planta de HC',corto:'HC',col:'#1d8a4a',txt:'HC'},
+ T:{n:'Planta de T',corto:'T',col:'#7a3db8',txt:'T'},
+ cr:{n:'Cantera rival',corto:'Cantera rival',col:'#8a6a3a',txt:'⛏'},
+ ce:{n:'Llegada de cemento (barco)',corto:'Cemento',col:'#0f6d8c',txt:'C'},
+ ot:{n:'Otro (escribe una nota)',corto:'Marca',col:'#444',txt:'•'}
+};
+let MARCAS=[],modoMarcar=false,tipoSel='hp';
+const POR_DEFECTO={planta:{la:HORINSA.planta.la,lo:HORINSA.planta.lo},cantera:{la:HORINSA.cantera.la,lo:HORINSA.cantera.lo}};
+// Ubicaciones reales marcadas por el usuario (19-11-2026).
+const UBICACIONES=[
+ {id:1,t:'hp',la:28.95872,lo:-13.60673,nota:''},
+ {id:2,t:'hc',la:28.95970,lo:-13.63005,nota:''},
+ {id:3,t:'L',la:28.96030,lo:-13.61020,nota:''},
+ {id:4,t:'HC',la:28.97616,lo:-13.56008,nota:''},
+ {id:5,t:'ce',la:28.97816,lo:-13.51500,nota:'Descarga de cemento'},
+ {id:6,t:'T',la:28.97321,lo:-13.52629,nota:''},
+ {id:7,t:'cr',la:28.96491,lo:-13.61204,nota:''}
+];
+function cargarMarcas(){MARCAS=UBICACIONES.map(m=>({...m}));try{const s=localStorage.getItem('horinsa-marcas');if(s===null)return;const v=JSON.parse(s);if(Array.isArray(v))MARCAS=v.filter(m=>TIPOS_M[m.t]&&isFinite(m.la)&&isFinite(m.lo))}catch(e){}}
+function guardarMarcas(){try{localStorage.setItem('horinsa-marcas',JSON.stringify(MARCAS))}catch(e){}}
+function syncHorinsa(){const p=MARCAS.find(m=>m.t==='hp'),c=MARCAS.find(m=>m.t==='hc');
+  Object.assign(HORINSA.planta,p?{la:p.la,lo:p.lo}:POR_DEFECTO.planta);Object.assign(HORINSA.cantera,c?{la:c.la,lo:c.lo}:POR_DEFECTO.cantera);
+}
+function colocar(x,y){colocarKm(WX(x),WY(y))}
+function colocarKm(kx,ky){const[la,lo]=INV(kx,ky);const nota=document.getElementById('mNota').value.trim();
+  if(TIPOS_M[tipoSel].unico)MARCAS=MARCAS.filter(m=>m.t!==tipoSel);
+  MARCAS.push({id:Date.now()+Math.random(),t:tipoSel,la:+la.toFixed(5),lo:+lo.toFixed(5),nota});
+  document.getElementById('mNota').value='';guardarMarcas();syncHorinsa();pintarLista();sucio=true}
+function pintarTipos(){document.getElementById('mTipos').innerHTML=Object.entries(TIPOS_M).map(([k,T])=>`<label><input type="radio" name="mt" value="${k}" ${k===tipoSel?'checked':''}><span class="chip" style="background:${T.col}">${T.txt}</span>${T.n}</label>`).join('');
+  document.querySelectorAll('input[name=mt]').forEach(r=>r.onchange=()=>{tipoSel=r.value})}
+function pintarLista(){const el=document.getElementById('mLista');
+  if(!MARCAS.length){el.innerHTML='<div style="color:#9aa6b2;font-size:12px">Aún no has marcado nada.</div>';return}
+  el.innerHTML=MARCAS.map((m,i)=>{const T=TIPOS_M[m.t];return `<div class="fila" data-i="${i}"><span class="chip" style="background:${T.col}">${T.txt}</span><div class="tx">${T.n.replace(/ \(.*\)/,'')}${m.nota?' · '+m.nota.replace(/</g,'&lt;'):''}<small>${m.la.toFixed(5)}, ${m.lo.toFixed(5)}</small></div><button title="Borrar" data-b="${i}">×</button></div>`}).join('');
+  el.querySelectorAll('.fila').forEach(f=>f.onclick=e=>{const m=MARCAS[+f.dataset.i];if(e.target.dataset.b!==undefined){MARCAS.splice(+e.target.dataset.b,1);guardarMarcas();syncHorinsa();pintarLista();sucio=true;return}
+    const p=P(m.la,m.lo);vista.cx=p[0];vista.cy=p[1];vista.s=Math.max(vista.s,120);sucio=true})}
+function textoExport(){return 'Ubicaciones marcadas en el mapa de HORINSA:\n'+MARCAS.map(m=>`- ${TIPOS_M[m.t].n.replace(/ \(.*\)/,'')}: ${m.la.toFixed(5)}, ${m.lo.toFixed(5)}${m.nota?' — '+m.nota:''}`).join('\n')}
+document.getElementById('bMarcar').onclick=()=>{modoMarcar=!modoMarcar;document.getElementById('marcar').style.display=modoMarcar?'block':'none';document.getElementById('capas').style.display=modoMarcar?'none':'';document.getElementById('bMarcar').classList.toggle('on',modoMarcar);document.getElementById('ficha').style.display='none';cv.style.cursor=modoMarcar?'crosshair':'grab'};
+document.getElementById('mCerrar').onclick=()=>{if(modoMarcar)document.getElementById('bMarcar').onclick()};
+document.getElementById('mCopiar').onclick=async()=>{const t=textoExport(),ta=document.getElementById('mExport');ta.value=t;ta.style.display='block';ta.select();
+  let ok=false;try{await navigator.clipboard.writeText(t);ok=true}catch(e){try{ok=document.execCommand('copy')}catch(_){}}
+  const b=document.getElementById('mCopiar');b.textContent=ok?'¡Copiado! Pégamelo en el chat':'Selecciona el texto y cópialo';setTimeout(()=>b.textContent='Copiar para Claude',2500)};
+cargarMarcas();syncHorinsa();pintarTipos();pintarLista();
+
+const GANCHOS_DIBUJO=[];
+function bucle(){if(window.MINIJUEGO){requestAnimationFrame(bucle);return}   // durante el minijuego el mapa no se dibuja (toda la gráfica para él)
+  if(window.tickJuego)tickJuego();if(window.MODO3D&&window.cuadro3D)cuadro3D();else dibujar();requestAnimationFrame(bucle)}
+// Centrar la vista en un punto (km). El 3D la sustituye por su propia versión.
+function enfocar(x,y){if(window.MODO3D&&window.enfocar3D)return enfocar3D(x,y);vista.cx=x;vista.cy=y;vista.s=Math.max(vista.s,90);sucio=true}
+function ponerModo(m3){
+  const puede=!!window.cuadro3D;window.MODO3D=m3&&puede;
+  document.getElementById('c').style.display=window.MODO3D?'none':'block';
+  for(const id of['c3','o3'])document.getElementById(id).style.display=window.MODO3D?'block':'none';
+  document.getElementById('escala').style.display=window.MODO3D?'none':'';
+  document.getElementById('zhome').style.display='';
+  document.querySelectorAll('.solo3d').forEach(b=>b.style.display=window.MODO3D?'':'none');
+  document.getElementById('bModo').textContent=window.MODO3D?'Ver en 2D':'Ver en 3D';
+  try{localStorage.setItem('horinsa-modo',window.MODO3D?'3d':'2d')}catch(e){}
+  sucio=true;
+}
+addEventListener('resize',()=>{redim();sucio=true});
+redim();encuadre();bucle();
+cargarDEM().finally(()=>setTimeout(()=>{const t0=performance.now();TERRENO=generar();console.log('Terreno',TW+'x'+TH,Math.round(performance.now()-t0)+' ms');sucio=true;if(window.iniciarJuego)iniciarJuego();if(window.iniciar3D)iniciar3D();const c=document.getElementById('carga');c.style.opacity=0;setTimeout(()=>c.remove(),450)},60));
+</script>
+<script src="juego.js"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module" src="render3d.js"></script>
+<script type="module" src="minijuego.js"></script>
+<script type="module" src="pala.js"></script>
+<script type="module" src="canaleta.js"></script>
+</body>
+</html>
