@@ -802,22 +802,118 @@ function crearPlantas(){
   const [qx, qz] = P(HORINSA.cantera.la, HORINSA.cantera.lo);
   const cq = crearCantera(true); cq.rotation.y = anguloAcceso(qx, qz); colocarEn(cq, qx, qz, 1.6);
 }
+// Cantera a cielo abierto cortada en un cono volcánico: bancos escalonados con estratos de basalto y picón,
+// fondo con rodadas, planta de machaqueo (tolva, machacadora, criba, cintas y acopios), excavadora en el frente,
+// dúmper, pala, caseta, báscula, depósito de agua y torre de luz.
 function crearCantera(propia){
-  const g = new THREE.Group();
-  const perfil = [[0, 3], [70, 3], [70, 9], [95, 9], [95, 15], [120, 15], [120, 21], [145, 21], [152, 10]].map(([r, y]) => new THREE.Vector2(r, y));
-  const hueco = .55;                                   // boca de entrada (hacia +z; luego se orienta hacia la carretera)
-  const bowl = new THREE.Mesh(new THREE.LatheGeometry(perfil, 48, hueco / 2, Math.PI * 2 - hueco), mat(propia ? 0xd3bd93 : 0xc9b48c, { side: THREE.DoubleSide }));
-  bowl.scale.set(1, 1, .75); bowl.receiveShadow = bowl.castShadow = true; g.add(bowl);
+  const g = new THREE.Group(), rn = i => { const v = Math.sin(i * 12.9898 + 4.1) * 43758.5453; return v - Math.floor(v); };
+  const AM = 0xf2b705, GR = 0x3b3f44, NG = 0x222222, VI = 0x1c2a36;
+  // ---- el hoyo: perfil de bancos (r, y, tipo) ----
+  const pf = [[0, 1, 'f'], [30, 1, 'f'], [58, 1, 'f']];
+  let r = 58, y = 1;
+  for (let b = 0; b < 4; b++){ pf.push([r + 1.2, y + 2.5, 'c'], [r + 2.2, y + 5, 'c'], [r + 3, y + 7, 'c']); r += 3; y += 7; pf.push([r + 6, y, 'b'], [r + 14, y, 'b']); r += 14; }
+  pf.push([r + 3, y + 1.5, 'o'], [r + 12, y - 6, 'o'], [r + 22, y - 16, 'o'], [r + 32, y - 25, 'o'], [r + 38, 0, 'o']);
+  const hueco = .62, SEG = 72, NP = pf.length;
+  const geo = new THREE.LatheGeometry(pf.map(([a, b]) => new THREE.Vector2(a, b)), SEG, hueco / 2, Math.PI * 2 - hueco);
+  const pos = geo.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color();
+  const cF = new THREE.Color(0xb39d7c), cB = new THREE.Color(0x857160), cBas = new THREE.Color(0x4a3a34), cRoj = new THREE.Color(0x7d4532), cPic = new THREE.Color(0x8a4a30), cNeg = new THREE.Color(0x3a2c28);
+  for (let v = 0; v < pos.count; v++){
+    const i = Math.floor(v / NP), j = v % NP, t = pf[j][2], x = pos.getX(v), z = pos.getZ(v), yy = pos.getY(v), ph = Math.atan2(x, z), rr = Math.hypot(x, z);
+    const borde = Math.min(1, Math.min(i, SEG - i) / 6);                                      // sin deformar junto a la boca (encaja con las tapas)
+    let k = 1 + borde * (.06 * Math.sin(ph * 3 + 1) + .035 * Math.sin(ph * 7 + 2) + .015 * Math.sin(ph * 17));
+    if (t === 'c') k += borde * (rn(v) - .5) * .035;                                           // frentes de roca rugosos
+    if (t !== 'f' || j > 1) pos.setXYZ(v, x * k, yy + (t === 'o' ? borde * (rn(i * 3 + j) - .5) * 2.5 : 0), z * k);
+    const n = rn(v * 7.3) * .18;
+    if (t === 'f') c.copy(cF).offsetHSL(0, 0, n - .09);
+    else if (t === 'b') c.copy(cB).lerp(cRoj, rn(i * 5 + j) * .25).offsetHSL(0, 0, n * 1.2 - .12);
+    else if (t === 'c'){ const e = .5 + .5 * Math.sin(yy * 1.7 + Math.sin(ph * 5) * .8); c.copy(cBas).lerp(cRoj, e * .8).offsetHSL(0, 0, n - .06); }
+    else { const e = .5 + .5 * Math.sin(ph * 4 + rr * .05); c.copy(cNeg).lerp(cPic, e).offsetHSL(0, 0, n - .05); }
+    col[v * 3] = c.r; col[v * 3 + 1] = c.g; col[v * 3 + 2] = c.b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
+  const hoyo = new THREE.Group(); hoyo.scale.set(1, 1, .75); g.add(hoyo);
+  const bowl = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, side: THREE.DoubleSide })); bowl.castShadow = bowl.receiveShadow = true; hoyo.add(bowl);
+  // tapas de la boca: el corte del cono visto de lado
+  const forma = new THREE.Shape(); forma.moveTo(0, 0); for (const [a, b] of pf) forma.lineTo(a, b); forma.lineTo(pf[NP - 1][0], 0); forma.lineTo(0, 0);
+  for (const ph of [hueco / 2, Math.PI * 2 - hueco / 2]){ const m = new THREE.Mesh(new THREE.ShapeGeometry(forma), mat(0x5a4236, { side: THREE.DoubleSide, roughness: 1 })); m.rotation.y = ph - Math.PI / 2; m.castShadow = m.receiveShadow = true; hoyo.add(m); }
+  // fondo con rodadas de dúmper, charcos de agua de riego y piedras sueltas
+  const suelo = new THREE.Mesh(new THREE.CircleGeometry(57.5, 48), new THREE.MeshStandardMaterial({ roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, map: lienzo(512, 512, (x, w, h) => {
+    x.fillStyle = '#b39d7c'; x.fillRect(0, 0, w, h);
+    for (let i = 0; i < 9000; i++){ const q = Math.random(); x.fillStyle = q < .5 ? 'rgba(70,55,45,.18)' : 'rgba(235,220,190,.16)'; const s = Math.random() * 3 + .5; x.fillRect(Math.random() * w, Math.random() * h, s, s); }
+    x.strokeStyle = 'rgba(80,64,50,.28)'; x.lineCap = 'round';
+    for (let k = 0; k < 7; k++){ x.lineWidth = 9 + Math.random() * 6; const y0 = h * (.15 + k * .11); x.beginPath(); x.moveTo(w * .5, h); x.bezierCurveTo(w * (.2 + Math.random() * .6), h * .7, w * Math.random(), y0 + 40, w * (.15 + Math.random() * .7), y0); x.stroke(); }
+    for (let k = 0; k < 5; k++){ x.fillStyle = 'rgba(95,80,66,.35)'; x.beginPath(); x.ellipse(Math.random() * w, Math.random() * h, 20 + Math.random() * 30, 8 + Math.random() * 12, Math.random() * 3, 0, 7); x.fill(); }
+    for (let i = 0; i < 260; i++){ x.fillStyle = Math.random() < .5 ? '#5b4a40' : '#7d6a58'; x.beginPath(); x.arc(Math.random() * w, Math.random() * h, 1 + Math.random() * 2.5, 0, 7); x.fill(); } }) }));
+  suelo.rotation.x = -Math.PI / 2; suelo.position.y = 1.03; suelo.receiveShadow = true; hoyo.add(suelo);
+  // pista que sube al primer banco (pegada a la pared oeste)
+  const pista = caja(hoyo, 7, .8, 34, 0xa8916f, -63, 4.6, 4); pista.rotation.x = -Math.atan2(7, 34);
+  // bloques de roca caídos al pie de los frentes
+  for (let i = 0; i < 46; i++){ const ph = hueco / 2 + .15 + rn(i + 50) * (Math.PI * 2 - hueco - .3), rr = 52 + rn(i + 90) * 5, s = 1 + rn(i + 130) * 2.4;
+    const p = new THREE.Mesh(new THREE.SphereGeometry(s, 6, 4), mat(rn(i) < .5 ? 0x4a3a34 : 0x6a4434, { flatShading: true, roughness: 1 }));
+    p.position.set(Math.sin(ph) * rr, 1 + s * .45, Math.cos(ph) * rr * .75); p.scale.set(1, .7, .85); p.rotation.set(rn(i + 3) * 3, rn(i + 7) * 3, 0); p.castShadow = p.receiveShadow = true; g.add(p); }
+
+  // ---- planta de machaqueo ----
+  const patas = (x, z, w, d, h, color = GR) => { for (const [a, b] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]]) caja(g, .5, h, .5, color, x + a, 1 + h / 2, z + b); };
+  const cinta = (x1, y1, z1, x2, y2, z2) => { const dx = x2 - x1, dy = y2 - y1, dz = z2 - z1, L = Math.hypot(dx, dy, dz), H = Math.hypot(dx, dz);
+    const o = new THREE.Group(); o.position.set((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2); o.rotation.set(0, -Math.atan2(dz, dx), Math.atan2(dy, H)); g.add(o);
+    caja(o, L, .45, 1.5, GR, 0, 0, 0); caja(o, L, .12, 1.1, 0x161616, 0, .28, 0); caja(o, L, .7, .08, 0x8a9096, 0, .55, .8); caja(o, L, .7, .08, 0x8a9096, 0, .55, -.8);
+    const nL = Math.max(1, Math.floor(H / 7)); for (let k = 1; k <= nL; k++){ const f = k / (nL + 1), py = y1 + dy * f; caja(g, .35, py - 1, .35, GR, x1 + dx * f, (py + 1) / 2, z1 + dz * f); } };
+  // tolva de alimentación y machacadora de mandíbulas
+  const TX = -30, TZ = -22;
+  patas(TX, TZ, 5, 5, 6); caja(g, 6, .6, 6, GR, TX, 7.3, TZ);
+  const tv = cil(g, 5.2, 2, 3.6, AM, TX, 9.4, TZ, 4); tv.rotation.y = Math.PI / 4;
+  caja(g, 7.5, 1, .4, 0x8a9096, TX, 11.3, TZ - 3.6); caja(g, .4, 1, 7.5, 0x8a9096, TX - 3.6, 11.3, TZ);
+  caja(g, 5, 4, 3.6, 0x5f6870, TX + 5, 3, TZ); for (const zz of [-2.1, 2.1]){ const v = cil(g, 1.7, 1.7, .5, 0xd2201f, TX + 4, 4, TZ + zz, 18); v.rotation.x = Math.PI / 2; }
+  caja(g, 3, 2.4, 2.2, 0x2d3236, TX + 5, 6.2, TZ);                                         // motor
+  // rampa de tierra para que el dúmper vuelque en la tolva
+  const rmp = caja(g, 18, 1.2, 8, 0x9c8668, TX - 13, 4.4, TZ); rmp.rotation.z = Math.atan2(7, 18) * .9; caja(g, 8, 7.2, 8, 0x9c8668, TX - 6.5, 4.6, TZ);
+  // criba vibrante elevada
+  const CX = -6, CZ = -16;
+  patas(CX, CZ, 6, 3.6, 7); const cb = caja(g, 7.5, 2, 4, 0x4b7a99, CX, 9.4, CZ); cb.rotation.z = -.18; caja(g, 7.6, .3, 4.2, 0x8a9096, CX, 10.6, CZ).rotation.z = -.18;
+  cinta(TX + 7, 2.5, TZ, CX - 3.5, 10.5, CZ);
+  // tres cintas a los acopios
+  const ac = propia ? [[0x2e2726, 'picón'], [0x7a4a36, 'arena'], [0x9a8f80, 'grava']] : [[0x3a3331], [0x86573f], [0xa29684]];
+  const destinos = [[8, -34], [22, -22], [24, -4]];
+  destinos.forEach(([x, z], i) => { cinta(CX + 3, 8.5 - i, CZ + (i - 1) * 1.2, x, 11, z); monton(g, 10.5, 9, ac[i][0], x + 2, .9, z, i + 3); });
+  // acopio de todo-uno junto a la tolva
+  monton(g, 8, 5.5, 0x5a4438, TX - 4, .9, TZ + 15, 9);
+
+  // ---- maquinaria ----
+  // excavadora de cadenas en el frente este
+  { const e = new THREE.Group(); e.position.set(43, 1, 6); e.rotation.y = -.25; g.add(e);
+    for (const s of [-1.6, 1.6]){ caja(e, 6.4, 1.2, 1.1, NG, 0, .6, s); caja(e, 5.4, .3, 1.15, 0x3a3a3a, 0, 1.25, s); }
+    caja(e, 2.2, .6, 2.2, 0x2a2a2a, 0, 1.45, 0);
+    const t = new THREE.Group(); t.position.y = 1.75; e.add(t);
+    caja(t, 4.6, 1.5, 3.2, AM, -.6, .75, 0); caja(t, 1.2, 1.7, 3.2, 0x2f2f2f, -3.3, .85, 0);
+    caja(t, 1.9, 2, 1.4, AM, 1.1, 2.1, 1.0); caja(t, 1.95, 1.2, 1.3, VI, 1.15, 2.4, 1.0, { roughness: .1, metalness: .6 });
+    const bo = new THREE.Group(); bo.position.set(1.4, 1.5, -.4); bo.rotation.z = .7; t.add(bo); caja(bo, 6.6, .8, .7, AM, 3.3, 0, 0);
+    const pa = new THREE.Group(); pa.position.set(6.6, 0, 0); pa.rotation.z = -2.0; bo.add(pa); caja(pa, 4.2, .55, .55, AM, 2.1, 0, 0);
+    const cz = new THREE.Group(); cz.position.set(4.2, 0, 0); cz.rotation.z = -.6; pa.add(cz); caja(cz, 1.5, 1.3, 1.6, 0x55595d, .6, 0, 0); }
+  monton(g, 6, 3.4, 0x4f3c34, 50, .9, 13, 11);                                               // roca volada al pie del frente
+  // dúmper rígido cargado
+  const dumper = (x, z, ry) => { const d = new THREE.Group(); d.position.set(x, 1, z); d.rotation.y = ry; g.add(d);
+    for (const [px, pz] of [[2.8, 1.8], [2.8, -1.8], [-2.4, 1.8], [-2.4, -1.8]]){ const w = cil(d, 1.35, 1.35, 1, NG, px, 1.35, pz, 16); w.rotation.x = Math.PI / 2; const l = cil(d, .7, .7, 1.02, AM, px, 1.35, pz, 10); l.rotation.x = Math.PI / 2; }
+    caja(d, 8, .8, 2.4, 0x2e2e2e, 0, 1.9, 0); caja(d, 1.8, 1.8, 1.4, AM, 3.4, 3.2, 1.05); caja(d, 1.85, 1, 1.3, VI, 3.45, 3.5, 1.05, { roughness: .1, metalness: .6 });
+    caja(d, 1.2, 1.4, 2.4, AM, 3.6, 2.9, -.6);
+    caja(d, 6.2, .35, 3.8, AM, -.7, 2.8, 0); for (const s of [-1.85, 1.85]) caja(d, 6.2, 1.9, .25, AM, -.7, 3.8, s); caja(d, .35, 2.6, 3.8, AM, 2.4, 4.1, 0); caja(d, 1.6, .25, 3.8, AM, 3.2, 5.4, 0);
+    monton(d, 2.3, 1.5, 0x4f3c34, -.8, 3, 0, 5); };
+  dumper(26, 20, 2.6); dumper(-16, -30, -.2);
+  // pala cargadora junto a los acopios
+  { const p = new THREE.Group(); p.position.set(12, 1, -12); p.rotation.y = 2.2; g.add(p);
+    for (const [px, pz] of [[1.6, 1.3], [1.6, -1.3], [-1.6, 1.3], [-1.6, -1.3]]){ const w = cil(p, .95, .95, .75, NG, px, .95, pz, 14); w.rotation.x = Math.PI / 2; }
+    caja(p, 2.6, 1.5, 2.2, AM, -1.6, 1.9, 0); caja(p, 2.2, 1, 2, AM, 1, 1.6, 0); caja(p, 1.6, 1.9, 1.7, AM, -.4, 3.5, 0); caja(p, 1.65, 1.1, 1.6, VI, -.35, 3.7, 0, { roughness: .1, metalness: .6 });
+    const br = caja(p, 3.4, .4, 1.8, AM, 3.2, 2, 0); br.rotation.z = -.25; caja(p, 1.2, 1.1, 2.8, 0x55595d, 4.9, 1.2, 0); }
+  // ---- instalaciones ----
+  caja(g, 9, 2.8, 3.2, 0xeeeeee, -20, 2.4, 31); caja(g, 9.2, .3, 3.4, 0xcfcfcf, -20, 3.9, 31); caja(g, 6, .9, .06, VI, -20, 2.6, 32.63, { roughness: .1, metalness: .6 });
+  caja(g, 3.6, .3, 17, 0x6d7177, 9, 1.15, 36); caja(g, 3, .5, 1, 0xd2201f, 9, 1.5, 27.2); caja(g, 3, .5, 1, 0xd2201f, 9, 1.5, 44.8);      // báscula
+  caja(g, 2.2, 2.4, 2, 0xeeeeee, 13, 2.2, 36); caja(g, 2.25, .8, 1.6, VI, 13, 2.6, 36);
+  patas(-34, 20, 3, 3, 4); cil(g, 2.6, 2.6, 4.5, 0x2d6fa8, -34, 7.3, 20, 16, { metalness: .3, roughness: .5 });               // depósito de agua para regar
+  cil(g, .25, .25, 14, 0x8a9096, -42, 8, 2, 8); caja(g, 3, 1.4, .4, 0xdddddd, -42, 15, 2, { emissive: 0x111111 }); caja(g, 2, 1, 2, 0xf2b705, -42, 1.5, 2);  // torre de luz
+  if (propia){ cartel(g, 'H', '#d2201f', '#ffffff', 6, 6, 4, 6.5, 47); cil(g, .3, .3, 6, 0x8a9096, 1.6, 3.5, 47, 8); cil(g, .3, .3, 6, 0x8a9096, 6.4, 3.5, 47, 8);
+    cartel(g, 'HORINSA', '#d2201f', '#ffffff', 7, 1.6, -20, 4.9, 32.7); }
   const rampa = caja(g, 26, .6, 95, propia ? 0xc8b088 : 0xbfa983, 0, .5, 115 * .75); rampa.receiveShadow = true;   // explanada de entrada por la boca (bajo el asfalto)
-  cono(g, 12, 8, 0xbfa77d, -30, 7, 10); cono(g, 9, 6, 0x8f857a, 10, 6, 25);
-  const mach = new THREE.Group(); caja(mach, 7, 2.5, 3.2, 0xf2b705, 0, 2, 0); caja(mach, 3, 2.4, 2.8, 0x333333, -1.5, 4.4, 0);
-  const brazo = caja(mach, 7, .8, .8, 0xf2b705, 4, 4.5, 0); brazo.rotation.z = -.5; mach.position.set(30, 3, -10); g.add(mach);
-  caja(g, 14, 7, 8, 0x6c7680, -10, 6.5, -30);                                    // machacadora
-  const cc = caja(g, 30, .8, 1.6, 0x2c2f33, 8, 9, -30); cc.rotation.z = .3;
-  if (propia) cartel(g, 'H', '#d2201f', '#ffffff', 6, 3, -10, 12, -25.9);
   return g;
-}
-function crearTerminalCemento(){
+}function crearTerminalCemento(){
   const g = new THREE.Group();
   caja(g, 60, .5, 40, 0x8f8a83, 0, .25, 0);
   for (const x of [-12, 4]){ cil(g, 7, 7, 30, 0xf2f3f4, x, 15.5, 0, 24, { metalness: .3, roughness: .5 }); cono(g, 7, 3, 0xd8dadc, x, 32, 0, 24); }

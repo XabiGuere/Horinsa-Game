@@ -44,7 +44,7 @@ const MAT = {
   grava:    { n: 'Grava 12/20',    c: 0x8d8882, css: '#9a958e' },
   gravilla: { n: 'Gravilla 4/12',  c: 0xbdb3a2, css: '#bdb3a2' }
 };
-const CAZO = 2.5;           // toneladas por cazo
+const CAZO = 3;           // toneladas por cazo
 let S = null;
 
 window.abrirPala = function (op) {
@@ -141,12 +141,12 @@ function iniciar(op, res){
   caja(scene, .6, 3, 36, bloque, -28, 1.5, 0);
 
   // tolvas en el este: elevadas, se vuelca con el brazo arriba. Cada una con su material (cartel de color)
-  const nT = [2, 3, 4][dif - 1], pide = [7.5, 10, 12.5][dif - 1], tolvas = [];
+  const nT = [2, 3, 4][dif - 1], pide = nT * CAZO, tolvas = [];
   const orden = dif === 1 ? ['arena', 'grava'] : dif === 2 ? ['arena', 'gravilla', 'grava'] : ['arena', 'gravilla', 'grava', 'arena'];
   const acero = std(0x4b5560, { metalness: .5, roughness: .5 }), azul = std(0x5f8299, { metalness: .3, roughness: .5 }), rojo = std(0xd2201f, { roughness: .4 });
   const tw = [5.2, 4.6, 4.2][dif - 1];
   for (let i = 0; i < nT; i++){
-    const z = (i - (nT - 1) / 2) * 6.6, x = 8;
+    const z = (i - (nT - 1) / 2) * 6.6, x = 2;
     for (const [dx, dz] of [[-tw / 2 + .2, -tw / 2 + .2], [tw / 2 - .2, -tw / 2 + .2], [-tw / 2 + .2, tw / 2 - .2], [tw / 2 - .2, tw / 2 - .2]]) caja(scene, .35, 2.4, .35, acero, x + dx, 1.2, z + dz);
     const emb = new THREE.Mesh(new THREE.CylinderGeometry(tw * .72, .6, 1.4, 4, 1, true), azul); emb.rotation.y = Math.PI / 4; emb.position.set(x, 3.1, z); emb.castShadow = true; scene.add(emb);
     const borde = rojo.clone(); for (const [w, d, dx, dz] of [[tw, .2, 0, tw / 2], [tw, .2, 0, -tw / 2], [.2, tw, tw / 2, 0], [.2, tw, -tw / 2, 0]]) caja(scene, w, .45, d, borde, x + dx, 3.95, z + dz);
@@ -155,23 +155,24 @@ function iniciar(op, res){
     et.position.set(x - tw / 2 - .12, 4.6, z); et.rotation.y = -Math.PI / 2; scene.add(et);
     // rampa/tope de hormigón delante de la tolva (la pala no puede meterse debajo)
     caja(scene, .8, .7, tw, std(0xb5b3ad, { roughness: .95 }), x - tw / 2 - .7, .35, z);
-    tolvas.push({ k, x, z, w: tw, t: 0, mal: 0, lleno, borde, meta: pide / nT * (1 + (k === 'arena' ? .2 : 0)) });
+    tolvas.push({ k, x, z, w: tw, t: 0, mal: 0, lleno, borde, meta: CAZO });
   }
   // cinta colectora bajo las tolvas y torre al fondo (decorado)
-  caja(scene, 2, .6, nT * 6.6 + 3, std(0x26292c), 8, .6, 0);
-  caja(scene, 9, 13, 9, std(0xeceeef), 20, 6.5, 0); caja(scene, 9.2, 2, 9.2, rojo, 20, 11, 0);
-  cil(scene, 3.2, 3.2, 15, std(0xf3f5f6, { metalness: .3, roughness: .5 }), 20, 12, -12, 20);
+  caja(scene, 2, .6, nT * 6.6 + 3, std(0x26292c), 2, .6, 0);
+  caja(scene, 9, 13, 9, std(0xeceeef), 16, 6.5, 0); caja(scene, 9.2, 2, 9.2, rojo, 16, 11, 0);
+  cil(scene, 3.2, 3.2, 15, std(0xf3f5f6, { metalness: .3, roughness: .5 }), 16, 12, -12, 20);
   for (let i = 0; i < 8; i++){ const a = i / 8 * Math.PI * 2 + .3, r = 260 + Math.random() * 100, h = 25 + Math.random() * 30;
     const v = new THREE.Mesh(new THREE.ConeGeometry(h * 3.6, h, 16, 1, true), std(0x6b3d2b, { roughness: 1, flatShading: true })); v.position.set(Math.cos(a) * r, h / 2 - 2, Math.sin(a) * r); scene.add(v); }
   // obstáculos (rectángulos en planta) para chocar
   const obst = [{ x: -28, z: 0, w: .6, d: 36 }, ...[-18, -6, 6, 18].map(z => ({ x: -25.5, z, w: 5, d: .6 })),
-    ...tolvas.map(t => ({ x: t.x, z: t.z, w: t.w, d: t.w })), ...tolvas.map(t => ({ x: t.x - t.w / 2 - .7, z: t.z, w: .8, d: t.w })), { x: 20, z: 0, w: 9, d: 9 }, { x: 20, z: -12, w: 6.4, d: 6.4 },
+    ...tolvas.map(t => ({ x: t.x, z: t.z, w: t.w, d: t.w })), ...tolvas.map(t => ({ x: t.x - t.w / 2 - .7, z: t.z, w: .8, d: t.w })), { x: 16, z: 0, w: 9, d: 9 }, { x: 16, z: -12, w: 6.4, d: 6.4 },
     { x: 0, z: -22.5, w: 56, d: 1 }, { x: 0, z: 22.5, w: 56, d: 1 }, { x: 28.5, z: 0, w: 1, d: 44 }];
-  if (dif >= 2) for (const [x, z] of [[-3, -7], [-1, 9]]){ const c = new THREE.Mesh(new THREE.ConeGeometry(.3, .8, 12), std(0xff6a00)); c.position.set(x, .4, z); c.castShadow = true; scene.add(c); obst.push({ x, z, w: .6, d: .6, cono: c }); }
-  if (dif === 3){ caja(scene, 5, 2.4, 2.4, std(0xececec), 0, 1.3, -17); obst.push({ x: 0, z: -17, w: 5, d: 2.4 }); }   // hormigonera aparcada
+  if (dif >= 2) for (const [x, z] of [[-9, -16], [-8, 17]]){ const c = new THREE.Mesh(new THREE.ConeGeometry(.3, .8, 12), std(0xff6a00)); c.position.set(x, .4, z); c.castShadow = true; scene.add(c); obst.push({ x, z, w: .6, d: .6, cono: c }); }
+  if (dif === 3){ caja(scene, 5, 2.4, 2.4, std(0xececec), 8, 1.3, -18); obst.push({ x: 8, z: -18, w: 5, d: 2.4 }); }   // hormigonera aparcada
 
   const P = palaCargadora(scene);
-  const st = { x: -6, z: 0, a: Math.PI, v: 0, dir: 0, brazo: 0, cazo: 0, carga: 0, mat: null, t: 0, tiempo: [90, 80, 75][dif - 1], golpes: 0, mezclas: 0, derramado: 0, entregado: 0, vuelco: 0 };
+  const flecha = new THREE.Mesh(new THREE.ConeGeometry(.9, 1.8, 16), new THREE.MeshStandardMaterial({ color: 0xffd400, emissive: 0xffb000, emissiveIntensity: .9 })); flecha.rotation.x = Math.PI; scene.add(flecha);
+  const st = { x: -9, z: 0, a: Math.PI, v: 0, dir: 0, brazo: 0, cazo: 0, carga: 0, mat: null, t: 0, tiempo: [120, 105, 90][dif - 1], golpes: 0, mezclas: 0, derramado: 0, entregado: 0, vuelco: 0 };
   S = { capa, renderer, scene, camera, res, op, st, fin: false, empezado: false, joy: new THREE.Vector2(), teclas: new Set(), botones: { sub: false, baj: false, vol: false }, raf: 0, tolvas, acopios, obst, P, dif, pide };
   window.__plS = S;
 
@@ -184,7 +185,7 @@ function iniciar(op, res){
     <div id="plBots"><button id="plSub">⬆ SUBIR<br>BRAZO</button><button id="plBaj">⬇ BAJAR<br>BRAZO</button><button id="plVolcar">🪣 VOLCAR PALA</button></div><div id="plPaso"></div>
     <div id="plCam"><button data-cam="izq">⟲</button><button data-cam="der">⟳</button><button data-cam="alto">📷</button></div>
     <div id="plPanel"><div class="caja"><h3>🚜 ¡Coge la pala!</h3>
-      <p>${esc(op.palista || 'El palista')} tiene que salir y te deja la pala: hay que llenar las tolvas antes de que se quede sin áridos la planta. Tienes <b>${[90, 80, 75][dif - 1]} segundos</b>.</p>
+      <p>${esc(op.palista || 'El palista')} tiene que salir y te deja la pala: hay que llenar las tolvas antes de que se quede sin áridos la planta. Tienes <b>${[120, 105, 90][dif - 1]} segundos</b>. Una flecha amarilla te marca siempre adónde ir.</p>
       <p>🕹️ <b>Joystick</b> (o WASD): adelante, atrás y girar. Métete de frente en el acopio con el <b>brazo abajo</b>: el cazo se llena al tocar el montón.</p>
       <p>⬆ <b>SUBIR BRAZO</b> (R) hasta arriba, acércate de frente a la tolva de <b>ese mismo material</b> (su borde se pone <b style="color:#5fe07a">verde</b>) y pulsa <b>🪣 VOLCAR PALA</b> (espacio). ⬇ <b>BAJAR BRAZO</b> (F) para volver a cargar.</p>
       <p>⚠️ No mezcles materiales, no choques y no gires a toda velocidad con el brazo arriba.</p>
@@ -226,7 +227,12 @@ function iniciar(op, res){
       if (!sep) return o; }
     return null; };
   const angB = () => -.55 + st.brazo * 1.55;
-  const puntaCazo = () => { const c = Math.cos(st.a), s = Math.sin(st.a), alc = 1.4 + 3.2 * Math.cos(angB()) + .9; return [st.x + c * alc, st.z + s * alc]; };
+  // la tolva que queda bajo el cazo (la más centrada) y el sitio al que toca ir ahora
+  const tolvaCerca = (px, pz) => { let tv = null, dm = 1e9; for (const t of tolvas) if (Math.abs(px - t.x) < t.w / 2 + 3 && Math.abs(pz - t.z) < t.w / 2 + .8){ const d = Math.abs(pz - t.z); if (d < dm){ dm = d; tv = t; } } return tv; };
+  const pendientes = () => tolvas.filter(t => t.t - t.mal < t.meta - .05);
+  const destino = () => { const pend = pendientes();
+    if (st.carga > .05){ const t = pend.find(q => q.k === st.mat) || tolvas.find(q => q.k === st.mat); return t ? { x: t.x - t.w / 2 - 4.6, z: t.z, tv: t } : null; }
+    if (!pend.length) return null; const a = acopios.find(q => q.k === pend[0].k); return { x: a.x + 3, z: a.z, ac: a }; };  const puntaCazo = () => { const c = Math.cos(st.a), s = Math.sin(st.a), alc = 1.4 + 3.2 * Math.cos(angB()) + .9; return [st.x + c * alc, st.z + s * alc]; };
 
   function paso(dt){
     if (!S.empezado || S.fin) return;
@@ -236,17 +242,19 @@ function iniciar(op, res){
     const sube = B.sub || T.has('r'), baja = B.baj || T.has('f'), volcar = B.vol || T.has(' ');
     // motor y dirección articulada
     // con el brazo arriba y cargada va más despacio (así no vuelca nunca)
-    const objetivo = -jy * (jy < 0 ? 7 : 4.5) * (st.brazo > .5 && st.carga > 0 ? .55 : 1);
-    st.v += Math.max(-6 * dt, Math.min(6 * dt, objetivo - st.v)); if (Math.abs(jy) < .05) st.v *= Math.max(0, 1 - dt * 3);
-    st.dir += (jx * .6 - st.dir) * Math.min(1, dt * 4);
+    const objetivo = -jy * (jy < 0 ? 8 : 5.5) * (st.brazo > .5 && st.carga > 0 ? .8 : 1);
+    st.v += Math.max(-8 * dt, Math.min(8 * dt, objetivo - st.v)); if (Math.abs(jy) < .05) st.v *= Math.max(0, 1 - dt * 3);
+    st.dir += (jx * .7 - st.dir) * Math.min(1, dt * 5);
+    // ayuda a la dirección: si no giras, la pala se encara sola hacia el acopio o la tolva que toca
+    { const ob = destino(); if (ob && Math.abs(jx) < .2 && st.v > .4){ const d = Math.hypot(ob.x - st.x, ob.z - st.z); if (d < 18 && d > 2){ let da = Math.atan2(ob.z - st.z, ob.x - st.x) - st.a; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) < .9) st.a += da * Math.min(1, dt * 1.8); } } }
     const nx = st.x + Math.cos(st.a) * st.v * dt, nz = st.z + Math.sin(st.a) * st.v * dt, na = st.a + st.v / batalla * Math.tan(st.dir) * dt;
     // si ya está metida en algo (p. ej. al bajar el brazo pegada a la tolva) puede salir: solo bloquea lo que empeora
     const ya = choca(st.x, st.z, st.a), o = ya ? null : choca(nx, nz, na);
-    if (o){ if (Math.abs(st.v) > 2.2 && st.t - (st.ultGolpe || -9) > .8){ st.golpes++; st.ultGolpe = st.t; aviso('¡Golpe!'); S.sacudida = .25; ton(70, .3); if (o.cono){ o.cono.rotation.z = 1.4; o.cono.position.y = .2; } } st.v *= -.1; }
+    if (o){ if (Math.abs(st.v) > 3.2 && st.t - (st.ultGolpe || -9) > .8){ st.golpes++; st.ultGolpe = st.t; aviso('¡Golpe!'); S.sacudida = .25; ton(70, .3); if (o.cono){ o.cono.rotation.z = 1.4; o.cono.position.y = .2; } } st.v *= -.1; }
     else { st.x = nx; st.z = nz; st.a = na; }
     // brazo y cazo
     // VOLCAR también sube el brazo solo: basta con acercarse a la tolva y pulsarlo
-    if (sube) st.brazo = Math.min(1, st.brazo + dt * .9); if (baja) st.brazo = Math.max(0, st.brazo - dt * 1.1);
+    if (sube) st.brazo = Math.min(1, st.brazo + dt * 1.5); if (baja) st.brazo = Math.max(0, st.brazo - dt * 1.8);
     // al alejarse de las tolvas con el cazo vacío, el brazo baja solo
     st.cazo += ((volcar ? 1 : 0) - st.cazo) * Math.min(1, dt * 6);
     // vuelco: correr o girar fuerte con el cazo arriba y cargado
@@ -260,16 +268,19 @@ function iniciar(op, res){
       const empuja = st.v > .05 || S.joy.y < -.2 || S.teclas.has('w') || S.teclas.has('arrowup');
       for (const a of acopios){ const d = Math.hypot(px - a.x, pz - a.z); if (d < a.r * 1.05 && (empuja || st.cargando)){
         if (st.mat && st.mat !== a.k && st.carga > .2){ if (!st.avisoMez){ st.avisoMez = true; aviso('Ya llevas otro material en el cazo'); setTimeout(() => st.avisoMez = false, 1500); } break; }
-        st.mat = a.k; st.carga = Math.min(CAZO, st.carga + dt * 3); st.cargando = true; a.t += dt * 3; if (Math.random() < .5) soltar(px, .3, pz, a.k, 1, 1); if (st.carga >= CAZO) ton(120, .12); break; } }
+        st.mat = a.k; st.carga = Math.min(CAZO, st.carga + dt * 5); st.cargando = true; a.t += dt * 5; if (Math.random() < .5) soltar(px, .3, pz, a.k, 1, 1); if (st.carga >= CAZO) ton(120, .12); break; } }
     } else st.cargando = false;
-    // volcar
-    if (st.cazo > .6 && st.carga > 0 && !(st.brazo < .3 && !tolvas.some(t => Math.abs(px - t.x) < t.w / 2 + 2.1 && Math.abs(pz - t.z) < t.w / 2 + .6))){
-      const v = Math.min(st.carga, dt * 6); st.carga -= v;
-      let tv = null; for (const t of tolvas) if (Math.abs(px - t.x) < t.w / 2 + 2.1 && Math.abs(pz - t.z) < t.w / 2 + .6) tv = t;
-      if (tv && st.brazo > .75){ tv.t += v; if (tv.k !== st.mat){ tv.mal += v; st.mezclas += v; if (!st.avisoMal){ st.avisoMal = true; aviso(`❌ ¡${MAT[st.mat].n} en la tolva de ${MAT[tv.k].n}!`); setTimeout(() => st.avisoMal = false, 1600); } } else st.entregado += v;
-        soltar(Math.max(px, tv.x - tv.w / 2 + .6), 4.2, tv.z + (pz - tv.z) * .5, st.mat, 2, -1); }
-      else { st.derramado += v; soltar(px, .9 + st.brazo * 3, pz, st.mat, 2, 0); if (!st.avisoDer){ st.avisoDer = true; aviso(tv ? '⬆ Sube el brazo del todo antes de volcar en la tolva' : 'Lo estás tirando al suelo'); setTimeout(() => st.avisoDer = false, 1500); } }
-      if (st.carga <= 0){ st.carga = 0; st.mat = null; }
+    // volcar: con el brazo arriba encima de una tolva cae dentro; si el brazo está bajo junto a la tolva, no vuelca (solo avisa)
+    if (st.cazo > .6 && st.carga > 0){
+      const tv = tolvaCerca(px, pz);
+      if (tv && st.brazo < .6){ if (!st.avisoDer){ st.avisoDer = true; aviso('⬆ Sube el brazo antes de volcar en la tolva'); setTimeout(() => st.avisoDer = false, 1500); } }
+      else if (tv || st.brazo >= .3){
+        const v = Math.min(st.carga, dt * 8); st.carga -= v;
+        if (tv){ tv.t += v; if (tv.k !== st.mat){ tv.mal += v; st.mezclas += v; if (!st.avisoMal){ st.avisoMal = true; aviso(`❌ ¡${MAT[st.mat].n} en la tolva de ${MAT[tv.k].n}!`); setTimeout(() => st.avisoMal = false, 1600); } } else st.entregado += v;
+          soltar(Math.max(px, tv.x - tv.w / 2 + .6), 4.2, tv.z + (pz - tv.z) * .5, st.mat, 2, -1); }
+        else { st.derramado += v; soltar(px, .9 + st.brazo * 3, pz, st.mat, 2, 0); if (!st.avisoDer){ st.avisoDer = true; aviso('Lo estás tirando al suelo'); setTimeout(() => st.avisoDer = false, 1500); } }
+        if (st.carga <= 0){ st.carga = 0; st.mat = null; ton(180, .15); }
+      }
     }
     // partículas
     for (let i = 0; i < NP; i++){ if (pvida[i] <= 0) continue; pvida[i] -= dt; pv[i * 3 + 1] -= 9.8 * dt; pp[i * 3] += pv[i * 3] * dt; pp[i * 3 + 1] += pv[i * 3 + 1] * dt; pp[i * 3 + 2] += pv[i * 3 + 2] * dt;
@@ -286,12 +297,13 @@ function iniciar(op, res){
     P.baliza.material.emissiveIntensity = Math.sin(performance.now() / 90) > 0 ? 2 : .2;
     for (const a of acopios){ const k = Math.max(.55, 1 - a.t / 45); a.m.scale.set(1, k, 1); }
     // el borde de la tolva se ilumina en verde si el cazo está encima de la correcta (rojo si no es su material)
-    { const c = Math.cos(st.a), s = Math.sin(st.a), alc = 1.4 + 3.2 * Math.cos(-.55 + st.brazo * 1.55) + .9, px = st.x + c * alc, pz = st.z + s * alc;
-      for (const t of tolvas){ const enc = st.carga > 0 && Math.abs(px - t.x) < t.w / 2 + 2.1 && Math.abs(pz - t.z) < t.w / 2 + .6; t.borde.emissive.set(enc ? (t.k === st.mat ? 0x1faa3a : 0xaa1a10) : 0x000000); t.borde.emissiveIntensity = enc ? 1.2 : 0; } }
+    { const [px, pz] = puntaCazo(), tc = st.carga > 0 ? tolvaCerca(px, pz) : null;
+      for (const t of tolvas){ const enc = t === tc; t.borde.emissive.set(enc ? (t.k === st.mat ? 0x1faa3a : 0xaa1a10) : 0x000000); t.borde.emissiveIntensity = enc ? 1.2 : 0; } }
     for (const t of tolvas){ const f = Math.min(1, t.t / (t.meta * 1.25)); t.lleno.scale.y = Math.max(.01, f * 1.3); t.lleno.position.y = 2.5 + f * .65; }
     for (let i = 0; i < NP; i++){ if (pvida[i] <= 0){ if (pvida[i] > -1){ pvida[i] = -2; piedras.setMatrixAt(i, new THREE.Matrix4().makeScale(0, 0, 0)); } continue; }
       o3.position.set(pp[i * 3], pp[i * 3 + 1], pp[i * 3 + 2]); o3.rotation.set(i, i * 2, 0); o3.scale.setScalar(.8 + (i % 5) * .2); o3.updateMatrix(); piedras.setMatrixAt(i, o3.matrix); }
     piedras.instanceMatrix.needsUpdate = true;
+    { const d = destino(), tt = performance.now() / 1000; flecha.visible = !!d && S.empezado; if (d){ const x = d.tv ? d.tv.x : d.ac.x, z = d.tv ? d.tv.z : d.ac.z, y = d.tv ? 7.2 : 6.4; flecha.position.set(x, y + Math.sin(tt * 4) * .35, z); flecha.rotation.y = tt * 2; } }
     // cámara de persecución por detrás y por encima, con algo de inercia
     const c = Math.cos(st.a), s = Math.sin(st.a), tt = performance.now() / 1000;
     S.sacudida = Math.max(0, (S.sacudida || 0) - dt); const sk = S.sacudida * Math.sin(tt * 55) * .4;
@@ -309,9 +321,10 @@ function iniciar(op, res){
     $('plTot').textContent = `📦 ${st.entregado.toFixed(1)} / ${S.pide} t`;
     $('plBr').textContent = `⬆ Brazo ${Math.round(st.brazo * 100)} %`; $('plBr').classList.toggle('mal', st.vuelco > .3);
     // siguiente paso, para que siempre se sepa qué hacer
-    { const [px, pz] = puntaCazo(), cerca = tolvas.find(t => Math.abs(px - t.x) < t.w / 2 + 2.1 && Math.abs(pz - t.z) < t.w / 2 + .6), pend = tolvas.filter(t => t.t - t.mal < t.meta);
+    { const [px, pz] = puntaCazo(), cerca = tolvaCerca(px, pz), pend = pendientes();
       let m; if (st.carga <= .05) m = st.brazo > .3 ? '⬇ Baja el brazo y métete en un acopio' : (pend.length ? `1 · Ve al acopio de ${MAT[pend[0].k].n} con el brazo abajo` : '¡Tolvas llenas! Pulsa Terminar');
-      else if (st.brazo < .9) m = '2 · ⬆ Sube el brazo del todo';
+      else if (st.cargando && st.carga < CAZO - .05) m = '⏳ Llenando el cazo… sigue empujando';
+      else if (st.brazo < .6) m = '2 · ⬆ Sube el brazo';
       else if (!cerca) m = `3 · Acércate de frente a la tolva de ${MAT[st.mat].n}`;
       else m = cerca.k === st.mat ? '4 · 🪣 ¡Pulsa VOLCAR PALA!' : `❌ Esta tolva es de ${MAT[cerca.k].n}`;
       const e = $('plPaso'); if (e.textContent !== m) e.textContent = m; }
@@ -337,7 +350,7 @@ function ton(fr, dur){ const A = S && S.audio; if (!A) return;
 function terminar(){
   if (!S || S.fin) return; S.fin = true; const st = S.st;
   const tot = S.tolvas.reduce((a, t) => a + Math.min(t.t - t.mal, t.meta), 0), meta = S.tolvas.reduce((a, t) => a + t.meta, 0), f = tot / meta;
-  const nota = st.entregado < 1 && st.t < 8 ? 'nada' : f >= .95 && st.mezclas < .3 && st.golpes === 0 ? 'perfecto' : f >= .6 && st.mezclas < 1.5 && st.golpes <= 2 ? 'bien' : 'mal';
+  const nota = st.entregado < 1 && st.t < 8 ? 'nada' : f >= .95 && st.mezclas < .5 && st.golpes <= 1 ? 'perfecto' : f >= .5 && st.mezclas < 2 && st.golpes <= 4 ? 'bien' : 'mal';
   const pts = Math.max(0, Math.round(st.entregado * 60 - st.mezclas * 120 - st.derramado * 25 - st.golpes * 80 + (f >= .95 ? Math.max(0, st.tiempo - st.t) * 8 : 0)));
   const estrellas = nota === 'perfecto' ? 3 : nota === 'bien' ? 2 : nota === 'mal' && f > .3 ? 1 : 0;
   let rec = null; try { const R0 = JSON.parse(localStorage.getItem('horinsa-records') || '{}'), k = 'pala-' + S.dif; rec = { antes: R0[k] || 0 }; if (pts > rec.antes && nota !== 'nada'){ R0[k] = pts; rec.nuevo = true; localStorage.setItem('horinsa-records', JSON.stringify(R0)); } } catch (e) {}

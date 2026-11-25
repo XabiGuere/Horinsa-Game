@@ -1,7 +1,7 @@
 // HORINSA — service worker: guarda el juego para que cargue rápido y funcione sin conexión
 // Archivos del juego: primero la red (siempre la última versión) y, sin conexión, la copia guardada.
 // Three.js desde el CDN: versión fija, así que primero la copia guardada.
-const CACHE = 'horinsa-v4';
+const CACHE = 'horinsa-v5';
 const CORE = ['./', 'index.html', 'juego.js', 'render3d.js', 'minijuego.js', 'pala.js', 'canaleta.js', 'camiones3d.js', 'datos/lanzarote-osm.js', 'datos/relieve.js',
   'manifest.webmanifest', 'icono-192.png', 'icono-512.png', 'apple-touch-icon.png', 'favicon.png'];
 const CDN = 'https://cdn.jsdelivr.net/npm/three@0.160.0/';

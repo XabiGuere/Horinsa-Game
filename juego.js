@@ -712,20 +712,20 @@ function ofrecerReto(c,p){
   const dif=Math.min(3,1+(J.nivel>=4?1:0)+(J.nivel>=7||p.clase==='hotel'?1:0));
   // en obras pequeñas de particulares muchas veces no hay bomba: se descarga directamente con la canaleta
   const porCanaleta=typeof window.abrirCanaleta==='function'&&!esAsf(p)&&(p.clase==='particular'?rnd()<.55:rnd()<.15);
-  R.reto=porCanaleta?{tipo:'canaleta',cid:c.id,pid:p.id,dif,expira:R.min+20}:{cid:c.id,pid:p.id,modo:modoReto(p),dif,expira:R.min+20};R.retosHoy=(R.retosHoy||0)+1;J.retoVisto=true;pintarUI(true);
+  R.reto=porCanaleta?{tipo:'canaleta',cid:c.id,pid:p.id,dif,expira:R.min+20}:{cid:c.id,pid:p.id,modo:modoReto(p),dif,expira:R.min+20};R.retosHoy=(R.retosHoy||0)+1;J.retoVisto=true;pausaLlamada();pintarUI(true);
 }
 function jugarReto(){
-  const r=R.reto;if(!r)return;R.reto=null;
-  if(r.tipo==='pala'){const op=operadorPlanta(),s=op&&op.s;window.abrirPala({dif:r.dif,palista:s?s.nombre:'El palista',alTerminar:res=>resultadoPala(res,s,r.dif)}).then(()=>{guardar();pintarUI(true)});return}
-  const p=R.pedidos.find(q=>q.id===r.pid),c=R.camiones.find(x=>x.id===r.cid),s=c&&choferDe(c);if(!p||!s){pintarUI(true);return}
-  if(r.tipo==='canaleta'){window.abrirCanaleta({dif:r.dif,cliente:p.cliente,chofer:s.nombre,alTerminar:res=>resultadoReto(res,p,s,r.dif,'canaleta')}).then(()=>{guardar();pintarUI(true)});return}
-  window.abrirMinijuego({modo:r.modo,dif:r.dif,viento:vientoReto(),cliente:p.cliente,chofer:s.nombre,m3:c.carga,alTerminar:res=>resultadoReto(res,p,s,r.dif)}).then(()=>{guardar();pintarUI(true)});
+  const r=R.reto;if(!r)return;R.reto=null;MJ_ABIERTO=true;pausaLlamada();const fin=()=>{MJ_ABIERTO=false;guardar();pintarUI(true)};
+  if(r.tipo==='pala'){const op=operadorPlanta(),s=op&&op.s;window.abrirPala({dif:r.dif,palista:s?s.nombre:'El palista',alTerminar:res=>resultadoPala(res,s,r.dif)}).then(fin);return}
+  const p=R.pedidos.find(q=>q.id===r.pid),c=R.camiones.find(x=>x.id===r.cid),s=c&&choferDe(c);if(!p||!s){MJ_ABIERTO=false;pintarUI(true);return}
+  if(r.tipo==='canaleta'){window.abrirCanaleta({dif:r.dif,cliente:p.cliente,chofer:s.nombre,alTerminar:res=>resultadoReto(res,p,s,r.dif,'canaleta')}).then(fin);return}
+  window.abrirMinijuego({modo:r.modo,dif:r.dif,viento:vientoReto(),cliente:p.cliente,chofer:s.nombre,m3:c.carga,alTerminar:res=>resultadoReto(res,p,s,r.dif)}).then(fin);
 }
 // Pala cargadora: el operario sale un momento y coges tú la pala para llenar las tolvas (1 minuto)
 function ofrecerPala(){
   if(window.__prueba||typeof window.abrirPala!=='function'||R.reto||R.vel<=0||!J.retoVisto||(R.palaHoy||0)>=1)return;
   const op=operadorPlanta();if(!op)return;if(rnd()>(J.palaVista?.1:1))return;
-  const dif=J.nivel<=2?1:J.nivel<=5?2:3;R.reto={tipo:'pala',dif,palista:op.s.nombre,expira:R.min+20};R.palaHoy=1;J.palaVista=true;pintarUI(true);
+  const dif=J.nivel<=2?1:J.nivel<=5?2:3;R.reto={tipo:'pala',dif,palista:op.s.nombre,expira:R.min+20};R.palaHoy=1;J.palaVista=true;pausaLlamada();pintarUI(true);
 }
 function resultadoPala(res,s,dif){
   if(!res||res.nota==='nada')return 'El palista vuelve y sigue él con las tolvas.';
@@ -1309,8 +1309,10 @@ function tickJuego(){
 }
 // Cuando entra una llamada el juego se para solo hasta que la aceptas, la rechazas o la pasas a mañana
 function pausaLlamada(){if(window.__prueba||!R)return;if(R.vel>0)R.velLl=R.vel;R.vel=0;R.pausaLl=true}
-function reanudarSiNoHayLlamadas(){if(R&&R.pausaLl&&!R.pedidos.some(p=>p.estado==='llamada')){R.pausaLl=false;if(R.enDia&&!R.tarde)R.vel=R.velLl||1}}
-function ponerVel(v){if(!R||!R.enDia)return;if(v>0&&R.pausaLl&&R.pedidos.some(p=>p.estado==='llamada')){toast('📞 Primero responde a la llamada: acéptala, recházala o pásala a mañana.','info');return}R.vel=v;pintarUI(true)}
+let MJ_ABIERTO=false;
+const hayEspera=()=>!!(R.reto||MJ_ABIERTO||R.pedidos.some(p=>p.estado==='llamada'));
+function reanudarSiNoHayLlamadas(){if(R&&R.pausaLl&&!hayEspera()){R.pausaLl=false;if(R.enDia&&!R.tarde)R.vel=R.velLl||1}}
+function ponerVel(v){if(!R||!R.enDia)return;if(v>0&&R.pausaLl&&hayEspera()){toast(MJ_ABIERTO?'🎮 Termina el minijuego primero.':R.pedidos.some(p=>p.estado==='llamada')?'📞 Primero responde a la llamada: acéptala, recházala o pásala a mañana.':'🎮 Primero decide: juega el minijuego o déjaselo a ellos (✕).','info');return}R.vel=v;pintarUI(true)}
 
 /* ------------------------------- Interfaz ------------------------------- */
 const toastsRecientes=new Map();
@@ -1343,7 +1345,7 @@ function pintarBandeja(){
   if(R.reto&&(!R.enDia||R.min>R.reto.expira||(R.reto.tipo!=='pala'&&!R.camiones.some(c=>c.id===R.reto.cid&&c.estado==='descargando'))))R.reto=null;
   if(R.reto){claves.add('reto');let el=caja.querySelector('[data-k="reto"]');const p=R.pedidos.find(q=>q.id===R.reto.pid),c=R.camiones.find(x=>x.id===R.reto.cid),s=c&&choferDe(c);
     if(!el){el=document.createElement('div');el.className='ll';el.dataset.k='reto';el.style.borderLeftColor='#7dff8a';el.style.borderColor='rgba(125,255,138,.5)';
-      if(R.reto.tipo==='pala')el.innerHTML=`<div class="tx">🚜 <b>${esc(R.reto.palista||'El palista')}</b> te deja la pala: hay que llenar las tolvas<small>${[90,80,75][R.reto.dif-1]} s · ${['fácil','normal','difícil'][R.reto.dif-1]} · la planta carga más rápido si sale bien</small></div><button class="ok" data-acc="jugarReto">Coger la pala</button><button data-acc="noReto" title="Que lo haga el palista">✕</button>`;
+      if(R.reto.tipo==='pala')el.innerHTML=`<div class="tx">🚜 <b>${esc(R.reto.palista||'El palista')}</b> te deja la pala: hay que llenar las tolvas<small>${[120,105,90][R.reto.dif-1]} s · ${['fácil','normal','difícil'][R.reto.dif-1]} · la planta carga más rápido si sale bien</small></div><button class="ok" data-acc="jugarReto">Coger la pala</button><button data-acc="noReto" title="Que lo haga el palista">✕</button>`;
       else if(R.reto.tipo==='canaleta')el.innerHTML=`<div class="tx">🚚 <b>${esc(s?s.nombre:'El chófer')}</b> descarga por canaleta en ${esc(p?p.cliente:'la obra')}<small>Zanja de cimentación · ${['fácil','normal','difícil'][R.reto.dif-1]} · propina si sale bien</small></div><button class="ok" data-acc="jugarReto">Coger el camión</button><button data-acc="noReto" title="Que lo haga el chófer">✕</button>`;
       else el.innerHTML=`<div class="tx">🎮 <b>${esc(s?s.nombre:'El chófer')}</b> te pide ayuda con la bomba en ${esc(p?p.cliente:'la obra')}<small>${{suelo:'Losa',muro:'Muro',pilares:'Pilares',zapatas:'Zapatas',escalera:'Escalera',piscina:'Piscina'}[R.reto.modo]} · ${['fácil','normal','difícil'][R.reto.dif-1]} · propina si sale bien</small></div><button class="ok" data-acc="jugarReto">Coger el mando</button><button data-acc="noReto" title="Que lo haga el bombista">✕</button>`;
       caja.insertBefore(el,caja.firstChild)}}
@@ -1374,7 +1376,7 @@ function pintarUI(forzar){
   $('jRep').textContent='★ '+Math.round(J.rep);
   const xa=NIVEL_XP[J.nivel-1]||0,xs=NIVEL_XP[J.nivel]||J.xp;$('jNivel').innerHTML=`Nv ${J.nivel}<i style="width:${J.nivel>=NIVEL_XP.length?100:Math.round((J.xp-xa)/(xs-xa)*100)}%"></i>`;$('jNivel').title=`${J.xp} XP${J.nivel<NIVEL_XP.length?' · siguiente nivel con '+xs:''}`;
   document.querySelectorAll('#jVel button').forEach(b=>b.classList.toggle('on',+b.dataset.v===R.vel&&R.enDia));
-  $('jEstado').textContent=CLIMAS[climaHoy()].ic+' '+(horaPunta(SIT?SIT.planta.x:0,SIT?SIT.planta.y:0)?'🚗 Hora punta · ':'')+(!R.enDia?'Jornada cerrada':R.tarde?'🌙 Planta cerrada · taller de noche':R.pausaLl?'📞 Pausa: responde a la llamada':R.vel===0?(R.min===INICIO?'Pulsa ▶ para empezar':'En pausa'):R.min>FIN?'⏰ Horas extra':'Jornada');
+  $('jEstado').textContent=CLIMAS[climaHoy()].ic+' '+(horaPunta(SIT?SIT.planta.x:0,SIT?SIT.planta.y:0)?'🚗 Hora punta · ':'')+(!R.enDia?'Jornada cerrada':R.tarde?'🌙 Planta cerrada · taller de noche':R.pausaLl?(MJ_ABIERTO?'🎮 Pausa: minijuego':R.pedidos.some(p=>p.estado==='llamada')?'📞 Pausa: responde a la llamada':'🎮 Pausa: ¿juegas el minijuego?'):R.vel===0?(R.min===INICIO?'Pulsa ▶ para empezar':'En pausa'):R.min>FIN?'⏰ Horas extra':'Jornada');
   $('jSaltar').style.display=R.tarde?'':'none';pintarObjB();pintarSel();$('jHora').className=R.tarde?'':$('jHora').className;
   $('jHora').title=CLIMAS[climaHoy()].n;$('jHora').dataset.clima=CLIMAS[climaHoy()].ic;
   const nLl=R.pedidos.filter(p=>p.estado==='llamada').length;$('jNLl').textContent=nLl?nLl:'';
