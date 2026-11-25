@@ -325,6 +325,12 @@ function iniciar(op, res){
   else if (modo === 'muro'){ obreros.push(persona(scene, M, -ob.L / 2 - 1.2, 1.2, Math.PI / 2), persona(scene, M, ob.L / 2 + 1.3, -1.6, -Math.PI / 2, 0xf2c230)); }
   else { obreros.push(persona(scene, M, -ob.bbox[0] - .9, (ob.bbox[1] + ob.bbox[2]) / 2 + .6, Math.PI / 2), persona(scene, M, ob.bbox[0] + .9, (ob.bbox[1] + ob.bbox[2]) / 2 - .6, -Math.PI / 2, 0xf2c230)); }
   // vibrador en manos del primero
+  // manguerista: un operario sujeta la boca de la manguera (en el muro, desde una pasarela al otro lado)
+  const pieM = modo === 'muro' ? ob.H + .08 : Math.max(0, ob.alturaPunta - 1.45);
+  const mang = persona(scene, M, 0, 0, 0, 0xf2c230); mang.g.position.y = pieM;
+  if (modo === 'muro'){ caja(base, ob.L + 2.4, .06, .62, M.tabla, 0, ob.H + .05, -(ob.w / 2 + .5)); caja(base, ob.L + 2.4, .05, .05, M.marco, 0, ob.H + 1.05, -(ob.w / 2 + .8));
+    for (let x = -ob.L / 2 - 1.1; x <= ob.L / 2 + 1.2; x += 1.2){ caja(base, .06, ob.H + 1.05, .06, M.marco, x, (ob.H + 1.05) / 2, -(ob.w / 2 + .8)); } }
+  else if (pieM > .1){ const cb = caja(mang.g, .9, .08, .7, M.tabla, 0, -.04, 0); caja(mang.g, .08, pieM, .6, M.marco, -.38, -pieM / 2, 0); caja(mang.g, .08, pieM, .6, M.marco, .38, -pieM / 2, 0); }
   const vib = cil(obreros[0].bR, .025, .025, .9, M.metal, 0, -.75, .2, 6); vib.rotation.x = .9;
 
   // ---------------- bomba de pluma ----------------
@@ -384,9 +390,9 @@ function iniciar(op, res){
     <div id="mjMando"><div id="mjJoy"><span>PLUMA</span><i></i></div><button id="mjBomba">BOMBEAR</button></div>
     <div id="mjPanel"><div class="caja"><h3>🎮 ¡Te toca bombear!</h3>
       <p>${esc(op.chofer || 'El chófer')} ha llegado a <b>${esc(op.cliente || 'la obra')}</b> y la bomba ya está estabilizada. Coges tú el mando: <b>${MODOS[modo].txt}</b></p>
-      <p>🕹️ <b>Joystick</b> (o WASD / flechas): mueve la punta de la pluma. La manguera <b>se balancea</b>: muévete suave y deja que se pare.</p>
+      <p>🕹️ <b>Joystick</b> (o WASD / flechas): mueve la punta de la pluma. 👷 Un operario <b>sujeta la manguera</b> y la mantiene quieta${modo === 'muro' ? ' y metida en el encofrado' : ''}: tú solo lleva la pluma encima, despacio.</p>
       <p>🔴 <b>BOMBEAR</b> (mantén pulsado o barra espaciadora): sale el hormigón. Si cae fuera del encofrado, se derrama.</p>
-      ${vto ? `<p>💨 <b>Hoy sopla viento</b> (${vto.kmh} km/h): empuja la manguera y el chorro. Mira la manga de viento y apunta un poco contra él.</p>` : ''}
+      ${vto ? `<p>💨 <b>Hoy sopla viento</b> (${vto.kmh} km/h): el operario aguanta la manguera, pero el chorro se desvía un poco: apunta algo contra el viento.</p>` : ''}
       <p>Bien hecho: propina del cliente, experiencia y el equipo contento. Mal hecho: limpieza, quejas y menos reputación.</p>
       <button id="mjEmpezar">¡Empezar!</button></div></div>`);
   const $ = id => capa.querySelector('#' + id);
@@ -527,14 +533,16 @@ function iniciar(op, res){
       vE.lerp(objetivo, Math.min(1, dt * 2.6));                                // la pluma tiene inercia
       E.addScaledVector(vE, dt); E.x = Math.max(-lim[0], Math.min(lim[0], E.x)); E.z = Math.max(-lim[1], Math.min(lim[1], E.z));
       // péndulo de la manguera
-      const rw = racha(S.t), w2 = 9.8 / balanceo.len, ax = (E.x - H.x) * w2 - vH.x * balanceo.amort + (vto ? Math.cos(vto.a) * rw : 0), az = (E.z - H.z) * w2 - vH.z * balanceo.amort + (vto ? Math.sin(vto.a) * rw : 0);
+      const rw = racha(S.t), w2 = 9.8 / balanceo.len; let ax = (E.x - H.x) * w2 - vH.x * balanceo.amort + (vto ? Math.cos(vto.a) * rw * .15 : 0), az = (E.z - H.z) * w2 - vH.z * balanceo.amort + (vto ? Math.sin(vto.a) * rw * .15 : 0);
+      // el manguerista frena el balanceo y, en el muro, mete la boca entre los tableros
+      ax -= vH.x * 5; az -= vH.z * 5 + (modo === 'muro' && Math.abs(H.z) < 1.2 ? H.z * 14 : 0);
       vH.x += ax * dt; vH.z += az * dt; H.x += vH.x * dt; H.z += vH.z * dt;
       const dxz = Math.min(balanceo.len * .95, Math.hypot(H.x - E.x, H.z - E.z)); H.y = E.y - Math.sqrt(balanceo.len ** 2 - dxz ** 2);
       // bombeo: golpes de la bomba (cada émbolo) que dan tirones a la manguera
       if (S.bombeando && S.cuba > 0){
         const caudal = S.capCuba / 48 * (dif === 3 ? 1.15 : 1), v = Math.min(S.cuba, caudal * dt); S.cuba -= v; S.vertido += v;
         const n = 3; for (let k = 0; k < n; k++) soltarGota(v / n);
-        if (S.t - S.ultimoGolpe > .75){ S.ultimoGolpe = S.t; S.sacudida = .06 * dif; vH.x += (Math.random() - .5) * .35 * dif; vH.z += (Math.random() - .5) * .35 * dif; golpe(); }
+        if (S.t - S.ultimoGolpe > .75){ S.ultimoGolpe = S.t; S.sacudida = .06 * dif; vH.x += (Math.random() - .5) * .07 * dif; vH.z += (Math.random() - .5) * .07 * dif; golpe(); }
       }
       if (S.cuba <= 0 && !S.avisoCuba){ S.avisoCuba = true; aviso('Cuba vacía'); setTimeout(() => terminar(), 1800); }
       if (S.t >= S.tiempo) terminar();
@@ -542,7 +550,7 @@ function iniciar(op, res){
     // gotas
     for (let i = 0; i < NP; i++){
       if (!gviva[i]) continue;
-      if (vto){ const rw = racha(S.t) * 1.4 * dt; gv[i * 3] += Math.cos(vto.a) * rw; gv[i * 3 + 2] += Math.sin(vto.a) * rw; }
+      if (vto){ const rw = racha(S.t) * .45 * dt; gv[i * 3] += Math.cos(vto.a) * rw; gv[i * 3 + 2] += Math.sin(vto.a) * rw; }
       gv[i * 3 + 1] -= 9.8 * dt; gp[i * 3] += gv[i * 3] * dt; gp[i * 3 + 1] += gv[i * 3 + 1] * dt; gp[i * 3 + 2] += gv[i * 3 + 2] * dt;
       const yS = ob.altura(gp[i * 3], gp[i * 3 + 2]);
       if (gp[i * 3 + 1] <= yS && gv[i * 3 + 1] < 0){ caer(i); continue; }
@@ -576,6 +584,9 @@ function iniciar(op, res){
     const tt = performance.now() / 1000;
     obreros.forEach((o, i) => { o.bL.rotation.x = -.9 + Math.sin(tt * (i ? 2 : 6)) * .25; o.bR.rotation.x = -1.1 + Math.sin(tt * (i ? 2 : 6) + 1) * .25; o.t.rotation.x = .12 + Math.sin(tt * 2) * .05;
       const objetivoX = Math.max(-lim[0] + 1, Math.min(lim[0] - 1, H.x + (i ? 1.4 : -1.4))); o.g.position.x += (objetivoX - o.g.position.x) * Math.min(1, dt * .6); });
+    { const zM = modo === 'muro' ? -(ob.w / 2 + .5) : H.z - .5; mang.g.position.x += (H.x - mang.g.position.x) * Math.min(1, dt * 8); mang.g.position.z += (zM - mang.g.position.z) * Math.min(1, dt * 8);
+      mang.g.rotation.y = Math.atan2(H.x - mang.g.position.x, H.z - mang.g.position.z);
+      const alc = Math.max(-2.6, Math.min(-1.2, -1.2 - (H.y - pieM - 1.4) * 1.5)); mang.bL.rotation.x = alc; mang.bR.rotation.x = alc + .15; mang.bL.rotation.z = -.25; mang.bR.rotation.z = .25; mang.t.rotation.x = -.05; }
     // cámara del bombista: mira a la boquilla con suavidad, un poco de movimiento de cabeza
     // cámaras: 0 andamio (bombista), 1 cenital (encima de la boquilla), 2 al ras del encofrado. Se giran arrastrando o con ⟲ ⟳
     S.sacudida = Math.max(0, (S.sacudida || 0) - dt * .25); const sk = S.sacudida * Math.sin(tt * 60);
